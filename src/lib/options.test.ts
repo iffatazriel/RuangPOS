@@ -28,6 +28,16 @@ it("rejects missing required choices, duplicate/unknown indices and multiple sin
   expect(() => optionLine({ ...product, price: Number.MAX_SAFE_INTEGER }, [[1]])).toThrow("Harga varian");
   expect(() => optionLine({ ...product, price: -1 }, [[0]])).toThrow("Harga varian");
 });
+it("omits zero deltas, preserves nonzero formatting and handles absent options", () => {
+  expect(optionText(optionLine(product, [[0]]))).toBe("Ukuran: Regular");
+  expect(optionText({ selectedOptions: [
+    { group: "Gula", name: "Normal", priceDelta: 0 },
+    { group: "Topping", name: "Boba", priceDelta: 3000 },
+    { group: "Ukuran", name: "Kecil", priceDelta: -1000 },
+  ] })).toBe("Gula: Normal, Topping: Boba (+Rp3.000), Ukuran: Kecil (−Rp1.000)");
+  expect(optionText({})).toBe("");
+  expect(optionText({ selectedOptions: [] })).toBe("");
+});
 it("canonicalizes selection order and merges only identical options while sharing product stock", () => {
   const regular = optionLine(product, [[0]]);
   const large = optionLine(product, [[1], [0, 1]]);
@@ -57,6 +67,8 @@ it("groups variants by product in stats and reports while exporting option snaps
   expect(report.products).toHaveLength(1);
   expect(report.products[0]).toMatchObject({ qty: 2, revenue: 28000 });
   expect(reportCSV(report, "Warung")).toContain("Ukuran: Large (+Rp5.000)");
+  expect(reportCSV(report, "Warung")).toContain("Ukuran: Regular");
+  expect(reportCSV(report, "Warung")).not.toContain("+Rp0");
 });
 it("validates group shape, unique names, signed whole-Rupiah deltas and selection snapshots", () => {
   expect(validOptionGroups([])).toBe(true);

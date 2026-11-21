@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { downloadBlob } from "./download";
 import { receiptPNG, shareReceiptPNG } from "./receiptImage";
+import { optionText } from "./options";
 
 vi.mock("./download", () => ({ downloadBlob: vi.fn() }));
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
@@ -38,7 +39,8 @@ it("rejects unsupported canvas and PNG encoding errors with actionable errors", 
 it("renders every receipt line and rejects oversized images instead of truncating", async () => {
   const context = { measureText: (s: string) => ({ width: s.length }), fillRect: vi.fn(), fillText: vi.fn() };
   vi.stubGlobal("document", { createElement: () => ({ getContext: () => context, toBlob: (callback: BlobCallback) => callback(png) }) });
-  expect(await receiptPNG("Warung\nKopi\nTOTAL")).toBe(png);
-  expect(context.fillText.mock.calls.map(call => call[0])).toEqual(["Warung", "Kopi", "TOTAL"]);
+  const options = optionText({ selectedOptions: [{ group: "Ukuran", name: "Regular", priceDelta: 0 }, { group: "Topping", name: "Boba", priceDelta: 3000 }] });
+  expect(await receiptPNG(`Warung\n${options}\nTOTAL`)).toBe(png);
+  expect(context.fillText.mock.calls.map(call => call[0])).toEqual(["Warung", "Ukuran: Regular, Topping: Boba (+Rp3.000)", "TOTAL"]);
   await expect(receiptPNG("Kopi\n".repeat(1000))).rejects.toThrow("terlalu panjang");
 });

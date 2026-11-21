@@ -22,7 +22,7 @@ export function OptionPicker({ product, add, close }: { product: Product; add: (
             next[gi] = group.multiple ? e.target.checked ? [...next[gi], oi] : next[gi].filter(i => i !== oi) : [oi];
             setChoices(next); setError("");
           }} />
-          {option.name} <span>{option.priceDelta >= 0 ? "+" : ""}{rupiah(option.priceDelta)}</span>
+          {option.name} {option.priceDelta !== 0 && <span>{option.priceDelta > 0 ? "+" : ""}{rupiah(option.priceDelta)}</span>}
         </label>)}
         {!group.multiple && !group.required && <button type="button" onClick={() => setChoices(groups.map((_, i) => i === gi ? [] : choices[i] ?? []))}>Tanpa {group.name}</button>}
       </fieldset>)}

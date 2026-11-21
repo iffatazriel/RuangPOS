@@ -3,7 +3,7 @@ import { normalizePhone, receiptText, whatsAppReceiptURL, wrapReceiptText } from
 import { totals, type Sale, type Settings } from "./logic";
 
 const settings: Settings = { name: "Warung Melati", address: "Bandung", phone: "022123456", footer: "Terima kasih!", taxEnabled: true, bankAccounts: [] };
-const items = [{ productId: "p", name: "Kopi", emoji: "☕", price: 15000, qty: 2, selectedOptions: [{ group: "Ukuran", name: "Large", priceDelta: 5000 }] }];
+const items = [{ productId: "p", name: "Kopi", emoji: "☕", price: 15000, qty: 2, selectedOptions: [{ group: "Ukuran", name: "Large", priceDelta: 5000 }, { group: "Gula", name: "Normal", priceDelta: 0 }] }];
 const sale: Sale = { id: "abcdefgh123", date: "2026-11-21T08:00:00Z", items, ...totals(items, 1000, 11), method: "Tunai", cash: 50000, voided: false, customerName: "Ibu Sari", taxEnabled: true };
 it("normalizes Indonesian local and international numbers and allows an empty recipient", () => {
   for (const phone of ["081234567890", "+62 812-3456-7890", "(0812) 3456 7890", "6281234567890", "006281234567890"])
@@ -20,6 +20,11 @@ it("formats store, buyer, options, amounts, PPN and cash change as plain text", 
   expect(text).toContain("32.190");
   expect(text).toContain("17.810");
   expect(text).not.toContain("undefined");
+  expect(text).toContain("Gula: Normal");
+  expect(text).not.toContain("+Rp0");
+  const url = new URL(whatsAppReceiptURL("", text));
+  expect(url.searchParams.get("text")).toContain("Gula: Normal");
+  expect(url.searchParams.get("text")).not.toContain("+Rp0");
 });
 it("formats legacy, empty, voided, QRIS and transfer receipts without losing bank snapshots", () => {
   const legacy = receiptText({ ...sale, customerName: undefined, taxEnabled: undefined, items: [], voided: true }, settings);

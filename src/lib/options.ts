@@ -31,7 +31,7 @@ export function lineKey(line: Pick<Line, "productId" | "selectedOptions">) {
   return JSON.stringify([line.productId, (line.selectedOptions ?? []).map(o => [o.group, o.name, o.priceDelta]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))]);
 }
 export function optionText(line: Pick<Line, "selectedOptions">) {
-  return (line.selectedOptions ?? []).map(o => `${o.group}: ${o.name} (${o.priceDelta >= 0 ? "+" : "−"}Rp${Math.abs(o.priceDelta).toLocaleString("id-ID")})`).join(", ");
+  return (line.selectedOptions ?? []).map(o => `${o.group}: ${o.name}${o.priceDelta === 0 ? "" : ` (${o.priceDelta > 0 ? "+" : "−"}Rp${Math.abs(o.priceDelta).toLocaleString("id-ID")})`}`).join(", ");
 }
 export function optionLine(product: Product, choices: number[][] = []): Line {
   const groups = product.optionGroups ?? [];
