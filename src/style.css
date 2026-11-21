@@ -26,13 +26,13 @@ html[data-theme="light"] {
 }
 html[data-theme="dark"] {
   color-scheme: dark;
-  --page: #0f1218;
-  --canvas: #151923;
-  --surface: #1a1e27;
-  --surface-muted: #252b38;
-  --text: #e7ecf7;
-  --muted: #99a4b8;
-  --border: #2c3342;
+  --page: #212121;
+  --canvas: #212121;
+  --surface: #2b2b2b;
+  --surface-muted: #323232;
+  --text: #ededed;
+  --muted: #b0b0b0;
+  --border: #3a3a3a;
   --accent: #87adff;
   --accent-soft: #253556;
   --navy: #b5ccff;
@@ -113,6 +113,11 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   color: var(--muted);
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background: var(--surface-muted);
 }
 input:focus,
 select:focus,

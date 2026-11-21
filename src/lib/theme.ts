@@ -3,7 +3,7 @@ export function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute("content", theme === "light" ? "#f4f6fb" : "#0f1218");
+    ?.setAttribute("content", theme === "light" ? "#f4f6fb" : "#212121");
 }
 export function initialTheme(): Theme {
   try {
