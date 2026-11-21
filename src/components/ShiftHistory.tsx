@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useData } from "../hooks/useData";
 import { rupiah } from "../lib/logic";
 import { voidsAfterClose } from "../lib/shifts";
@@ -20,7 +21,7 @@ export function ShiftHistory() {
       </tr>)}</tbody>
     </table></div>
     {!shifts.length && <p className="no-data">Belum ada shift. Buka shift di Kasir untuk mulai berjualan.</p>}
-    {shift && <Modal title="Detail shift" close={() => setDetail(null)}>
+    {shift && createPortal(<Modal title="Detail shift" close={() => setDetail(null)}>
       <div className="receipt">
         <h2>{settings.name}</h2><p>Laporan shift #{shift.id.slice(0, 8).toUpperCase()}</p>
         <p>Kasir: {shift.cashierName || "—"}<br />Dibuka: {new Date(shift.openedAt).toLocaleString("id-ID")}<br />Ditutup: {shift.closedAt ? new Date(shift.closedAt).toLocaleString("id-ID") : "Masih terbuka"}</p>
@@ -38,6 +39,6 @@ export function ShiftHistory() {
         {shift.note && <p>Catatan: {shift.note}</p>}
       </div>
       <button className="primary pay" onClick={() => window.print()}>Cetak laporan shift</button>
-    </Modal>}
+    </Modal>, document.body)}
   </section>;
 }
