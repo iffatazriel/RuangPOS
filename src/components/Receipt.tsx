@@ -1,5 +1,5 @@
 import { Printer } from "lucide-react";
-import { rupiah, type Sale, type Settings } from "../lib/logic";
+import { rupiah, PPN_RATE, type Sale, type Settings } from "../lib/logic";
 import { Modal } from "./Modal";
 
 export function Receipt({
@@ -25,6 +25,7 @@ export function Receipt({
           <br />#{s.id.slice(0, 8).toUpperCase()} {s.voided && "— DIBATALKAN"}
         </p>
         <hr />
+        <p>Pembeli: {s.customerName ?? "—"}</p>
         {s.items.map((i) => (
           <p className="receipt-row" key={i.productId}>
             <span>
@@ -37,7 +38,7 @@ export function Receipt({
         {[
           ["Subtotal", s.subtotal],
           ["Diskon", s.discount],
-          ["Pajak", s.tax],
+          [s.taxEnabled === undefined ? "Pajak" : `PPN ${PPN_RATE}%`, s.tax],
           ["TOTAL", s.total],
           ["Dibayar · " + s.method, s.cash],
           ["Kembalian", Math.max(0, s.cash - s.total)],
@@ -48,6 +49,7 @@ export function Receipt({
           </p>
         ))}
         <hr />
+        {s.bankAccount && <p>Transfer: {s.bankAccount.bankName}<br />{s.bankAccount.accountNumber}<br />a.n. {s.bankAccount.accountHolder}</p>}
         <p>{settings.footer}</p>
         <small>RuangPOS · Kasir lokal untuk usaha Anda</small>
       </div>

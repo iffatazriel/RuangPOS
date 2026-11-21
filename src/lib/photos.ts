@@ -12,7 +12,10 @@ export function photoBlob(url: string): Blob {
     type: header.slice(5, -7),
   });
 }
-export async function resizePhoto(file: File): Promise<Blob> {
+export async function resizePhoto(
+  file: File,
+  { maxSize = 600, type = "image/jpeg", quality = 0.8 } = {},
+): Promise<Blob> {
   if (!file.type.startsWith("image/") || file.size > 20_000_000)
     throw new Error("Pilih gambar maksimal 20 MB.");
   const url = URL.createObjectURL(file);
@@ -20,7 +23,7 @@ export async function resizePhoto(file: File): Promise<Blob> {
     const image = new Image();
     image.src = url;
     await image.decode();
-    const ratio = Math.min(1, 600 / Math.max(image.width, image.height));
+    const ratio = Math.min(1, maxSize / Math.max(image.width, image.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(image.width * ratio));
     canvas.height = Math.max(1, Math.round(image.height * ratio));
@@ -33,8 +36,8 @@ export async function resizePhoto(file: File): Promise<Blob> {
       canvas.toBlob(
         (blob) =>
           blob ? resolve(blob) : reject(new Error("Foto gagal diproses.")),
-        "image/jpeg",
-        0.8,
+        type,
+        quality,
       ),
     );
   } finally {

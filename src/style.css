@@ -820,6 +820,38 @@ html[data-theme="dark"] .product-card:nth-child(4n + 4) .product-image {
   border-radius: 0 0 0 15px;
   padding: 0 0 7px 7px;
 }
+html[data-theme] .qris-image {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.qris-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 440px;
+  object-fit: contain;
+}
+.checkout-payment,
+.bank-account {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.bank-account {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.checkout-payment a {
+  color: var(--accent);
+  text-decoration: underline;
+}
 .cart-notch::before {
   content: "";
   position: absolute;

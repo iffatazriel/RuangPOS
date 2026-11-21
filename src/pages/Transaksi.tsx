@@ -12,10 +12,12 @@ export function Transaksi() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState(day());
   const [detail, setDetail] = useState<Sale | null>(null);
+  const [query, setQuery] = useState("");
   const filtered = sales.filter(
     (s) =>
       (!from || day(new Date(s.date)) >= from) &&
-      (!to || day(new Date(s.date)) <= to),
+      (!to || day(new Date(s.date)) <= to) &&
+      (s.customerName ?? "").toLocaleLowerCase("id-ID").includes(query.trim().toLocaleLowerCase("id-ID")),
   );
   return (
     <>
@@ -26,6 +28,7 @@ export function Transaksi() {
         <div className="section-heading">
           <h2>Semua transaksi</h2>
           <div className="actions">
+            <input aria-label="Cari nama pembeli" placeholder="Cari nama pembeli..." value={query} onChange={e => setQuery(e.target.value)} />
             <input
               aria-label="Dari tanggal"
               type="date"
@@ -47,6 +50,7 @@ export function Transaksi() {
               <tr>
                 <th>ID / Waktu</th>
                 <th>Pesanan</th>
+                <th>Pembeli</th>
                 <th>Pembayaran</th>
                 <th>Total</th>
                 <th>Status</th>
@@ -63,6 +67,7 @@ export function Transaksi() {
                   <td>
                     {s.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}
                   </td>
+                  <td>{s.customerName ?? "—"}</td>
                   <td>{s.method}</td>
                   <td>{rupiah(s.total)}</td>
                   <td>

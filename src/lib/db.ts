@@ -3,6 +3,7 @@ import { photoDataURL, photoBlob } from "./photos";
 import {
   totals,
   stockAfterVoid,
+  migrateSettings,
   type Product,
   type Category,
   type Sale,
@@ -14,7 +15,8 @@ export const defaults: Settings = {
   address: "Jl. Melati No. 12, Bandung",
   phone: "",
   footer: "Terima kasih, sampai jumpa kembali!",
-  tax: 0,
+  taxEnabled: false,
+  bankAccounts: [],
 };
 const db = new Dexie("ruangpos") as Dexie & {
   products: EntityTable<Product, "id">;
@@ -34,6 +36,19 @@ db.version(2).stores({
   sales: "id, date",
   settings: "id",
 });
+db.version(3)
+  .stores({
+    products: "id, category, active",
+    categories: "id",
+    sales: "id, date",
+    settings: "id",
+  })
+  .upgrade(tx => tx.table("settings").toCollection().modify(settings => {
+    const migrated = migrateSettings(settings);
+    delete settings.tax;
+    delete settings.taxPercent;
+    Object.assign(settings, migrated);
+  }));
 export { db };
 export async function getBackup(): Promise<Backup> {
   const snapshot = await db.transaction("r", db.tables, async () => ({
@@ -46,6 +61,12 @@ export async function getBackup(): Promise<Backup> {
   return {
     ...snapshot,
     version: 1,
+    settings: {
+      ...snapshot.settings,
+      qris: snapshot.settings.qris
+        ? await photoDataURL(snapshot.settings.qris)
+        : undefined,
+    },
     products: await Promise.all(
       snapshot.products.map(async ({ photo, ...p }) => ({
         ...p,
@@ -65,7 +86,12 @@ export async function replaceData(b: Backup) {
     );
     await db.categories.bulkPut(b.categories);
     await db.sales.bulkPut(b.sales);
-    await db.settings.put({ ...b.settings, id: "store" });
+    const { qris, ...settings } = b.settings;
+    await db.settings.put({
+      ...migrateSettings(settings),
+      ...(qris ? { qris: photoBlob(qris) } : {}),
+      id: "store",
+    });
   });
 }
 export async function saveSale(sale: Sale) {
@@ -146,6 +172,8 @@ export async function seed() {
         method: ["Tunai", "QRIS", "Transfer"][n % 3],
         cash: sum.total,
         voided: false,
+        customerName: `Pembeli contoh ${n + 1}`,
+        taxEnabled: false,
       });
     }
   await replaceData({
@@ -153,6 +181,6 @@ export async function seed() {
     products,
     categories,
     sales,
-    settings: defaults,
+    settings: { ...defaults, qris: undefined },
   });
 }

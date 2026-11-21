@@ -1,9 +1,12 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useRef } from "react";
+import { Link } from "react-router";
+import { ProductImage } from "./ProductImage";
 import { useDialogFocus } from "../hooks/useDialogFocus";
 import { ShoppingBag, Plus, Minus, CircleCheck, Trash2, X } from "lucide-react";
 import {
   rupiah,
+  PPN_RATE,
   type Product,
   type Line,
   type Settings,
@@ -23,6 +26,10 @@ type Props = {
   setMethod: (value: string) => void;
   cash: number;
   setCash: (value: number) => void;
+  customerName: string;
+  setCustomerName: (value: string) => void;
+  accountId: string;
+  setSelectedAccount: (value: string) => void;
   error: string;
   busy: boolean;
   pay: () => Promise<void>;
@@ -42,6 +49,10 @@ export function CartPanel({
   setMethod,
   cash,
   setCash,
+  customerName,
+  setCustomerName,
+  accountId,
+  setSelectedAccount,
   error,
   busy,
   pay,
@@ -72,6 +83,9 @@ export function CartPanel({
         </button>
         <span className="pill">{cart.reduce((s, i) => s + i.qty, 0)} item</span>
       </div>
+      <label>Nama pembeli
+        <input required maxLength={60} value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nama pembeli" autoComplete="name" />
+      </label>
       <div className="cart-items">
         {cart.length ? (
           cart.map((i) => (
@@ -146,7 +160,7 @@ export function CartPanel({
           />
         </label>
         <p>
-          <span>Pajak ({settings.tax}%)</span>
+          <span>PPN {PPN_RATE}%{!settings.taxEnabled && " (nonaktif)"}</span>
           <b>{rupiah(sum.tax)}</b>
         </p>
         <p className="grand-total">
@@ -192,11 +206,19 @@ export function CartPanel({
             Kembalian <b>{rupiah(Math.max(0, cash - sum.total))}</b>
           </p>
         </>
-      ) : (
-        <p className="notice">
-          Pastikan pembayaran {method} sudah diterima sebelum menyimpan.
-        </p>
-      )}
+      ) : <div className="checkout-payment">
+        {method === "QRIS" && (settings.qris ? <>
+          <ProductImage photo={settings.qris} emoji="" name="QRIS untuk dipindai pelanggan" className="qris-image" />
+          <p className="grand-total">Total QRIS <b>{rupiah(sum.total)}</b></p>
+        </> : <p className="notice">QRIS belum tersedia. <Link to="/pengaturan">Unggah QRIS di Pengaturan</Link>.</p>)}
+        {method === "Transfer" && (settings.bankAccounts.length ? <>
+          <label>Rekening tujuan<select value={accountId} onChange={e => setSelectedAccount(e.target.value)}>
+            {settings.bankAccounts.map(a => <option key={a.id} value={a.id}>{a.bankName} · {a.accountNumber} · {a.accountHolder}</option>)}
+          </select></label>
+          {settings.bankAccounts.filter(a => a.id === accountId).map(a => <p className="notice" key={a.id}>{a.bankName}<br />{a.accountNumber}<br />a.n. {a.accountHolder}</p>)}
+        </> : <p className="notice">Belum ada rekening. <Link to="/pengaturan">Tambahkan rekening di Pengaturan</Link>.</p>)}
+        <p className="notice">Pastikan pembayaran {method} sudah diterima sebelum menyimpan.</p>
+      </div>}
       {error && (
         <p role="alert" className="error">
           {error}
@@ -204,7 +226,7 @@ export function CartPanel({
       )}
       <button
         className="primary pay"
-        disabled={!cart.length || busy}
+        disabled={!cart.length || busy || (method === "QRIS" && !settings.qris) || (method === "Transfer" && !accountId)}
         onClick={() => void pay()}
       >
         <CircleCheck size={18} />
