@@ -1,10 +1,14 @@
 import { ArrowUpRight } from "lucide-react";
 import type { stats } from "../lib/logic";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../lib/db";
+import { ProductImage } from "./ProductImage";
 export function TopProducts({
   products,
 }: {
   products: ReturnType<typeof stats>["top"];
 }) {
+  const catalog = useLiveQuery(() => db.products.toArray()) ?? [];
   return (
     <section className="panel top-products">
       <div className="section-heading">
@@ -18,7 +22,7 @@ export function TopProducts({
         products.map((p, i) => (
           <div className="top-product" key={p.name}>
             <span className="rank">0{i + 1}</span>
-            <span className="product-emoji">{p.emoji}</span>
+            <ProductImage photo={catalog.find(product => product.name === p.name)?.photo} emoji={p.emoji} name={p.name} className="list-thumb"/>
             <div>
               <strong>{p.name}</strong>
               <small>{p.qty} item terjual</small>

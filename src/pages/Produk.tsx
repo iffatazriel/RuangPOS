@@ -6,6 +6,8 @@ import { rupiah, type Product } from "../lib/logic";
 import { Title } from "../components/Title";
 import { Modal } from "../components/Modal";
 import { productChanges } from "../lib/product";
+import { ProductImage } from "../components/ProductImage";
+import { resizePhoto } from "../lib/photos";
 
 export function Produk() {
   const products = useLiveQuery(() => db.products.toArray()) ?? [];
@@ -15,6 +17,8 @@ export function Produk() {
   const [cat, setCat] = useState("");
   const [manage, setManage] = useState(false);
   const [query, setQuery] = useState("");
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
   return (
     <>
       <Title eyebrow="KELOLA YANG ANDA TAWARKAN" title="Produk">
@@ -70,7 +74,7 @@ export function Produk() {
                 .map((p) => (
                   <tr key={p.id}>
                     <td>
-                      <span className="table-emoji">{p.emoji}</span>
+                      <ProductImage photo={p.photo} emoji={p.emoji} name={p.name} className="table-thumb"/>
                       <strong>{p.name}</strong>
                     </td>
                     <td>
@@ -132,6 +136,18 @@ export function Produk() {
               setEdit(null);
             }}
           >
+            <div className="photo-editor">
+              <ProductImage photo={edit.photo} emoji={edit.emoji} name={edit.name}/>
+              <div><strong>Foto produk</strong><p>JPG, PNG atau WebP · maksimal 20 MB.<br/>Otomatis diperkecil menjadi 600px.</p>
+              <label className="file-button">{photoBusy ? "Memproses..." : "Unggah foto"}<input aria-label="Unggah foto produk" disabled={photoBusy} type="file" accept="image/*" onChange={async e => {
+                const file = e.target.files?.[0]; e.target.value = ""; if (!file) return;
+                setPhotoError(""); setPhotoBusy(true);
+                try { const photo = await resizePhoto(file); setEdit(current => current?.id === edit.id ? {...current, photo} : current); }
+                catch (error) { setPhotoError((error as Error).message); }
+                finally { setPhotoBusy(false); }
+              }}/></label>{edit.photo && <button type="button" onClick={() => setEdit({...edit, photo: undefined})}>Hapus foto</button>}</div>
+            </div>
+            {photoError && <p role="alert" className="error">{photoError}</p>}
             <label>
               Nama produk
               <input
@@ -140,6 +156,7 @@ export function Produk() {
                 onChange={(e) => setEdit({ ...edit, name: e.target.value })}
               />
             </label>
+            <label>Deskripsi<textarea rows={3} maxLength={500} placeholder="Ceritakan kelezatan produk Anda..." value={edit.description ?? ""} onChange={e => setEdit({...edit, description: e.target.value})}/></label>
             <label>
               Kategori
               <select
@@ -200,7 +217,7 @@ export function Produk() {
               />{" "}
               Produk aktif
             </label>
-            <button className="primary">Simpan produk</button>
+            <button className="primary" disabled={photoBusy}>Simpan produk</button>
           </form>
         </Modal>
       )}
