@@ -6,8 +6,10 @@ Kasir lokal gratis dan terbuka untuk warung, kafe, dan UMKM Indonesia. Tanpa bac
 - Ringkasan harian, produk terlaris, dan grafik pendapatan 7/30 hari.
 - Kasir dengan keranjang, diskon Rupiah, pajak, Tunai/QRIS/Transfer, kembalian, serta cetak struk 80mm (dapat diskalakan ke 58mm di dialog cetak).
 - Kelola produk, kategori, stok opsional, riwayat, dan pembatalan dengan pengembalian stok.
+- Foto dan deskripsi produk; foto diperkecil di perangkat menjadi maksimal 600px dan disertakan dalam cadangan JSON. Data lama tanpa foto tetap didukung.
+- Tampilan terang/gelap, navigasi atas, pencarian dan urutan menu, serta keranjang drawer di tablet/ponsel.
 - Profil usaha, cadangan JSON tervalidasi, dan data contoh 30 hari.
-- PWA responsif, font lokal, IndexedDB (Dexie skema versi 1), bekerja offline setelah kunjungan awal.
+- PWA responsif, font lokal DM Sans, IndexedDB (Dexie skema versi 2, kompatibel dengan data lama), bekerja offline setelah kunjungan awal.
 
 ## Menggunakan PWA
 Buka URL RuangPOS yang disediakan pengelola hosting Anda melalui HTTPS. Tambahkan produk di **Produk**, atau pilih **Isi data contoh** di halaman awal. Atur profil dan pajak di **Pengaturan**, lalu mulai menjual di **Kasir**. QRIS dan Transfer adalah pencatatan manual, bukan integrasi pembayaran.

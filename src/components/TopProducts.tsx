@@ -22,7 +22,12 @@ export function TopProducts({
         products.map((p, i) => (
           <div className="top-product" key={p.name}>
             <span className="rank">0{i + 1}</span>
-            <ProductImage photo={catalog.find(product => product.name === p.name)?.photo} emoji={p.emoji} name={p.name} className="list-thumb"/>
+            <ProductImage
+              photo={catalog.find((product) => product.name === p.name)?.photo}
+              emoji={p.emoji}
+              name={p.name}
+              className="list-thumb"
+            />
             <div>
               <strong>{p.name}</strong>
               <small>{p.qty} item terjual</small>

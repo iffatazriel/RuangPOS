@@ -8,10 +8,13 @@ export function photoDataURL(blob: Blob): Promise<string> {
 }
 export function photoBlob(url: string): Blob {
   const [header, content] = url.split(",");
-  return new Blob([Uint8Array.from(atob(content), c => c.charCodeAt(0))], {type: header.slice(5, -7)});
+  return new Blob([Uint8Array.from(atob(content), (c) => c.charCodeAt(0))], {
+    type: header.slice(5, -7),
+  });
 }
 export async function resizePhoto(file: File): Promise<Blob> {
-  if (!file.type.startsWith("image/") || file.size > 20_000_000) throw new Error("Pilih gambar maksimal 20 MB.");
+  if (!file.type.startsWith("image/") || file.size > 20_000_000)
+    throw new Error("Pilih gambar maksimal 20 MB.");
   const url = URL.createObjectURL(file);
   try {
     const image = new Image();
@@ -26,6 +29,15 @@ export async function resizePhoto(file: File): Promise<Blob> {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return await new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Foto gagal diproses.")), "image/jpeg", 0.8));
-  } finally { URL.revokeObjectURL(url); }
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (blob) =>
+          blob ? resolve(blob) : reject(new Error("Foto gagal diproses.")),
+        "image/jpeg",
+        0.8,
+      ),
+    );
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }

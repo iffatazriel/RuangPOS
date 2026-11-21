@@ -74,7 +74,12 @@ export function Produk() {
                 .map((p) => (
                   <tr key={p.id}>
                     <td>
-                      <ProductImage photo={p.photo} emoji={p.emoji} name={p.name} className="table-thumb"/>
+                      <ProductImage
+                        photo={p.photo}
+                        emoji={p.emoji}
+                        name={p.name}
+                        className="table-thumb"
+                      />
                       <strong>{p.name}</strong>
                     </td>
                     <td>
@@ -89,7 +94,14 @@ export function Produk() {
                       </span>
                     </td>
                     <td>
-                      <button onClick={() => { setOriginalStock(p.stock); setEdit(p); }}>Edit</button>{" "}
+                      <button
+                        onClick={() => {
+                          setOriginalStock(p.stock);
+                          setEdit(p);
+                        }}
+                      >
+                        Edit
+                      </button>{" "}
                       <button
                         aria-label={"Hapus " + p.name}
                         onClick={() => {
@@ -129,7 +141,10 @@ export function Produk() {
             onSubmit={async (e) => {
               e.preventDefault();
               if (products.some((p) => p.id === edit.id)) {
-                await db.products.update(edit.id, productChanges(originalStock, edit));
+                await db.products.update(
+                  edit.id,
+                  productChanges(originalStock, edit),
+                );
               } else {
                 await db.products.add(edit);
               }
@@ -137,17 +152,61 @@ export function Produk() {
             }}
           >
             <div className="photo-editor">
-              <ProductImage photo={edit.photo} emoji={edit.emoji} name={edit.name}/>
-              <div><strong>Foto produk</strong><p>JPG, PNG atau WebP · maksimal 20 MB.<br/>Otomatis diperkecil menjadi 600px.</p>
-              <label className="file-button">{photoBusy ? "Memproses..." : "Unggah foto"}<input aria-label="Unggah foto produk" disabled={photoBusy} type="file" accept="image/*" onChange={async e => {
-                const file = e.target.files?.[0]; e.target.value = ""; if (!file) return;
-                setPhotoError(""); setPhotoBusy(true);
-                try { const photo = await resizePhoto(file); setEdit(current => current?.id === edit.id ? {...current, photo} : current); }
-                catch (error) { setPhotoError((error as Error).message); }
-                finally { setPhotoBusy(false); }
-              }}/></label>{edit.photo && <button type="button" onClick={() => setEdit({...edit, photo: undefined})}>Hapus foto</button>}</div>
+              <ProductImage
+                photo={edit.photo}
+                emoji={edit.emoji}
+                name={edit.name}
+              />
+              <div>
+                <strong>Foto produk</strong>
+                <p>
+                  JPG, PNG atau WebP · maksimal 20 MB.
+                  <br />
+                  Otomatis diperkecil menjadi 600px.
+                </p>
+                <label className="file-button">
+                  {photoBusy ? "Memproses..." : "Unggah foto"}
+                  <input
+                    aria-label="Unggah foto produk"
+                    disabled={photoBusy}
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!file) return;
+                      setPhotoError("");
+                      setPhotoBusy(true);
+                      try {
+                        const photo = await resizePhoto(file);
+                        setEdit((current) =>
+                          current?.id === edit.id
+                            ? { ...current, photo }
+                            : current,
+                        );
+                      } catch (error) {
+                        setPhotoError((error as Error).message);
+                      } finally {
+                        setPhotoBusy(false);
+                      }
+                    }}
+                  />
+                </label>
+                {edit.photo && (
+                  <button
+                    type="button"
+                    onClick={() => setEdit({ ...edit, photo: undefined })}
+                  >
+                    Hapus foto
+                  </button>
+                )}
+              </div>
             </div>
-            {photoError && <p role="alert" className="error">{photoError}</p>}
+            {photoError && (
+              <p role="alert" className="error">
+                {photoError}
+              </p>
+            )}
             <label>
               Nama produk
               <input
@@ -156,7 +215,18 @@ export function Produk() {
                 onChange={(e) => setEdit({ ...edit, name: e.target.value })}
               />
             </label>
-            <label>Deskripsi<textarea rows={3} maxLength={500} placeholder="Ceritakan kelezatan produk Anda..." value={edit.description ?? ""} onChange={e => setEdit({...edit, description: e.target.value})}/></label>
+            <label>
+              Deskripsi
+              <textarea
+                rows={3}
+                maxLength={500}
+                placeholder="Ceritakan kelezatan produk Anda..."
+                value={edit.description ?? ""}
+                onChange={(e) =>
+                  setEdit({ ...edit, description: e.target.value })
+                }
+              />
+            </label>
             <label>
               Kategori
               <select
@@ -217,7 +287,9 @@ export function Produk() {
               />{" "}
               Produk aktif
             </label>
-            <button className="primary" disabled={photoBusy}>Simpan produk</button>
+            <button className="primary" disabled={photoBusy}>
+              Simpan produk
+            </button>
           </form>
         </Modal>
       )}

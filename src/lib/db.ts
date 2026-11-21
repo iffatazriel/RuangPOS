@@ -28,7 +28,12 @@ db.version(1).stores({
   sales: "id, date",
   settings: "id",
 });
-db.version(2).stores({ products: "id, category, active", categories: "id", sales: "id, date", settings: "id" });
+db.version(2).stores({
+  products: "id, category, active",
+  categories: "id",
+  sales: "id, date",
+  settings: "id",
+});
 export { db };
 export async function getBackup(): Promise<Backup> {
   const snapshot = await db.transaction("r", db.tables, async () => ({
@@ -38,12 +43,26 @@ export async function getBackup(): Promise<Backup> {
     sales: await db.sales.toArray(),
     settings: (await db.settings.get("store")) ?? defaults,
   }));
-  return { ...snapshot, version: 1, products: await Promise.all(snapshot.products.map(async ({photo, ...p}) => ({...p, ...(photo ? {photo: await photoDataURL(photo)} : {})}))) };
+  return {
+    ...snapshot,
+    version: 1,
+    products: await Promise.all(
+      snapshot.products.map(async ({ photo, ...p }) => ({
+        ...p,
+        ...(photo ? { photo: await photoDataURL(photo) } : {}),
+      })),
+    ),
+  };
 }
 export async function replaceData(b: Backup) {
   await db.transaction("rw", db.tables, async () => {
     await Promise.all(db.tables.map((t) => t.clear()));
-    await db.products.bulkPut(b.products.map(({photo, ...p}) => ({...p, ...(photo ? {photo: photoBlob(photo)} : {})})));
+    await db.products.bulkPut(
+      b.products.map(({ photo, ...p }) => ({
+        ...p,
+        ...(photo ? { photo: photoBlob(photo) } : {}),
+      })),
+    );
     await db.categories.bulkPut(b.categories);
     await db.sales.bulkPut(b.sales);
     await db.settings.put({ ...b.settings, id: "store" });

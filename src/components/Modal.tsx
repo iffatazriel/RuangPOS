@@ -1,4 +1,6 @@
 import type React from "react";
+import { useRef } from "react";
+import { useDialogFocus } from "../hooks/useDialogFocus";
 import { X } from "lucide-react";
 
 export function Modal({
@@ -10,9 +12,12 @@ export function Modal({
   close: () => void;
   children: React.ReactNode;
 }) {
+  const ref = useRef<HTMLElement>(null);
+  useDialogFocus(ref, true, close);
   return (
     <div className="modal-backdrop">
       <section
+        ref={ref}
         role="dialog"
         aria-modal="true"
         aria-label={title}
