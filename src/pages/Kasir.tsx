@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   ShoppingBag,
@@ -27,8 +27,16 @@ export function Kasir() {
   const categories = useLiveQuery(() => db.categories.toArray()) ?? [];
   const settings = useLiveQuery(() => db.settings.get("store")) ?? defaults;
   const [params] = useSearchParams();
+  const location = useLocation();
   const [query, setQuery] = useState<string | null>(null);
   const [category, setCategory] = useState("");
+  const incomingQuery = params.get("q");
+  useEffect(() => {
+    if (incomingQuery !== null) {
+      setQuery(incomingQuery);
+      setCategory("");
+    }
+  }, [incomingQuery, location.key]);
   const [cart, setCart] = useState<Line[]>([]);
   const [discount, setDiscount] = useState(0);
   const [method, setMethod] = useState("Tunai");
