@@ -2,6 +2,9 @@ import { Printer } from "lucide-react";
 import { rupiah, PPN_RATE, type Sale, type Settings } from "../lib/logic";
 import { Modal } from "./Modal";
 import { lineKey, optionText } from "../lib/options";
+import { useState } from "react";
+import { receiptText, whatsAppReceiptURL } from "../lib/receipt";
+import { receiptPNG, shareReceiptPNG } from "../lib/receiptImage";
 
 export function Receipt({
   sale: s,
@@ -12,6 +15,9 @@ export function Receipt({
   settings: Settings;
   close: () => void;
 }) {
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   return (
     <Modal title="Detail transaksi" close={close}>
       <div className="receipt">
@@ -58,6 +64,26 @@ export function Receipt({
       <button className="primary pay" onClick={() => window.print()}>
         <Printer size={17} /> Cetak struk
       </button>
+      <div className="receipt-tools form-grid">
+        <label>Nomor WhatsApp (opsional)<input type="tel" inputMode="tel" value={phone} onChange={e => { setPhone(e.target.value); setError(""); }} placeholder="081234567890" autoComplete="tel" /></label>
+        <small className="notice">Tanpa nomor, pilih penerima di WhatsApp. Struk hanya dibagikan saat Anda menekan Kirim WA.</small>
+        <div className="actions">
+          <button onClick={() => {
+            setError("");
+            try { window.open(whatsAppReceiptURL(phone, receiptText(s, settings)), "_blank", "noopener,noreferrer"); }
+            catch (error) { setError((error as Error).message); }
+          }}>Kirim WA</button>
+          <button disabled={saving} onClick={async () => {
+            setSaving(true); setError("");
+            try {
+              const blob = await receiptPNG(receiptText(s, settings));
+              await shareReceiptPNG(blob, `struk-${s.id.replace(/[^a-z0-9-]/gi, "").slice(0, 12) || "ruangpos"}.png`);
+            } catch (error) { setError((error as Error).message); }
+            finally { setSaving(false); }
+          }}>{saving ? "Menyiapkan gambar..." : "Simpan gambar"}</button>
+        </div>
+        {error && <p className="error" role="alert">{error}</p>}
+      </div>
     </Modal>
   );
 }

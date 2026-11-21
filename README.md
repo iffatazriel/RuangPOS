@@ -14,7 +14,9 @@ Kasir lokal gratis dan terbuka untuk warung, kafe, dan UMKM Indonesia. Tanpa bac
 - Beranda dengan PIN 6 digit, jeda 30 detik setelah 5 kesalahan, dan kunci otomatis setelah 15 menit tanpa aktivitas.
 - Shift kasir: modal awal, nama kasir opsional, rekonsiliasi uang fisik/selisih, dan laporan tutup shift yang dapat dicetak. Hanya satu shift terbuka; transaksi baru wajib terhubung ke shift.
 - Varian dan tambahan produk: grup wajib/opsional, pilihan tunggal/jamak, selisih harga, dan rincian pilihan pada keranjang, struk, riwayat, serta export ringkasan.
-- PWA responsif, font lokal DM Sans, IndexedDB (Dexie skema versi 5, kompatibel dengan data lama), bekerja offline setelah kunjungan awal.
+- Kirim struk teks ke WhatsApp atau simpan sebagai PNG; perangkat yang mendukung berbagi berkas menggunakan menu berbagi sistem.
+- Stok minimum opsional, laporan stok dengan filter/CSV, peringatan stok habis/menipis di Ringkasan, dan sisa stok pada kartu Kasir.
+- PWA responsif, font lokal DM Sans, IndexedDB (Dexie skema versi 6, kompatibel dengan data lama), bekerja offline setelah kunjungan awal.
 
 ## Menggunakan PWA
 Buka URL RuangPOS yang disediakan pengelola hosting Anda melalui HTTPS. Buat PIN 6 digit dan ulangi untuk konfirmasi. Tambahkan produk di **Produk**, atau pilih **Isi data contoh**. Atur profil, QRIS, rekening, dan PPN di **Pengaturan**, lalu mulai menjual di **Kasir**. QRIS dan Transfer adalah pencatatan manual, bukan integrasi pembayaran; selalu pastikan dana sudah diterima.
@@ -24,6 +26,12 @@ Di Chrome/Edge pilih **Install aplikasi** di menu browser; di Safari iPhone pili
 Di **Kasir**, pilih **Buka shift** dan isi modal awal sebelum menyimpan transaksi. Tutup melalui Kasir atau Transaksi, masukkan uang fisik yang dihitung, lalu simpan. Kas seharusnya adalah modal awal + total penjualan Tunai setelah diskon, PPN, dan kembalian (transaksi batal dikecualikan). **Riwayat shift** menyimpan snapshot saat tutup; pembatalan sesudah tutup tidak mengubah snapshot, tetapi ditandai pada detail. Transaksi lama tanpa shift tetap tersedia tanpa dibuatkan modal awal fiktif.
 
 Atur **Varian & tambahan** pada modal produk; gunakan tombol panah untuk mengurutkan grup/pilihan. Produk bervarian meminta pilihan saat ditambahkan. Pilihan sama digabung, pilihan berbeda memiliki baris terpisah namun menggunakan stok produk yang sama. Nama/harga pilihan disalin ke transaksi agar perubahan katalog tidak mengubah struk lama. Cadangan JSON mencakup shift dan varian; cadangan lama tanpa keduanya tetap didukung.
+
+Atur **Stok minimum** di modal produk. Stok nol selalu ditandai Habis; stok positif yang tidak melebihi minimum ditandai Menipis. Tanpa minimum, ambang adalah nol. Produk dengan stok tidak dibatasi tidak memicu peringatan. Bagian **Laporan stok** di Produk dapat difilter menurut nama, kategori, dan status; CSV hanya memuat hasil filter. Model produk belum memiliki harga modal, sehingga nilai stok berdasarkan biaya tidak ditampilkan.
+
+Pada detail struk, **Kirim WA** menerima nomor opsional (awalan `08` dinormalisasi ke `628`); tanpa nomor, pilih penerima di WhatsApp. Data struk baru meninggalkan perangkat saat Anda memilih mengirim/berbagi. **Simpan gambar** membuat PNG lokal tanpa layanan pihak ketiga.
+
+Tautan dukungan ada di kartu **Tentang RuangPOS** pada Pengaturan. Pengelola mengganti `DONATION_URL` di `src/lib/config.ts` dan menyelaraskan `.github/FUNDING.yml`; keduanya masih menggunakan placeholder sampai tautan resmi tersedia.
 
 ## Privasi & cadangan
 **Semua data tetap di browser/perangkat Anda.** Tidak ada sinkronisasi cloud atau akun. Tiap browser dan alamat situs memiliki penyimpanan terpisah. Mode privat, pembersihan data browser, kerusakan perangkat, atau penghapusan aplikasi dapat menghilangkan data. Ekspor cadangan JSON secara rutin melalui Pengaturan dan simpan di lokasi aman. Impor mengganti data usaha setelah konfirmasi, tetapi tidak mengganti PIN perangkat. File cadangan berisi gambar QRIS dan rekening; jangan bagikan sembarangan.

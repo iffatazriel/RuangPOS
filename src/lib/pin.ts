@@ -8,6 +8,9 @@ export interface PinAttempts {
 }
 export const emptyAttempts: PinAttempts = { failures: 0, blockedUntil: 0 };
 export const LOCK_AFTER_MS = 15 * 60 * 1000;
+export function shouldSubmitPinOnEnter(tagName?: string | null) {
+  return !["BUTTON", "A"].includes(tagName?.toUpperCase() ?? "");
+}
 const hex = (bytes: Uint8Array) =>
   [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 async function digest(pin: string, salt: string) {

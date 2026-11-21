@@ -6,6 +6,7 @@ import { day, PPN_RATE, validateBackup, type Settings } from "../lib/logic";
 import { Title } from "../components/Title";
 import { PaymentSettings } from "../components/PaymentSettings";
 import { PinSettings } from "../components/PinSettings";
+import { About } from "../components/About";
 
 export function Pengaturan() {
   const { settings } = useData();
@@ -95,6 +96,7 @@ export function Pengaturan() {
         <div className="settings-side">
           <PaymentSettings settings={settings ?? defaults} />
           <PinSettings />
+          <About />
           <section className="panel">
             <div className="section-heading">
               <div>

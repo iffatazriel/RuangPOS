@@ -8,6 +8,7 @@ import { Empty } from "../components/EmptyState";
 import { StatCard } from "../components/StatCard";
 import { BarChart } from "../components/BarChart";
 import { TopProducts } from "../components/TopProducts";
+import { LowStockWarning } from "../components/LowStockWarning";
 
 export function Dashboard() {
   const [date, setDate] = useState(day());
@@ -61,6 +62,7 @@ export function Dashboard() {
           <BarChart chart={chart} period={period} setPeriod={setPeriod} />
         </div>
       )}
+      <LowStockWarning />
       <div className="bottom-note">
         <Sprout size={16} /> Usaha Anda, data Anda. Tersimpan aman di perangkat
         ini.

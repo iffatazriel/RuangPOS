@@ -70,6 +70,15 @@ db.version(5).stores({
 }).upgrade(tx => tx.table("products").toCollection().modify(product => {
   product.optionGroups ??= [];
 }));
+db.version(6).stores({
+  products: "id, category, active",
+  categories: "id",
+  sales: "id, date, shiftId",
+  settings: "id",
+  shifts: "id, status, openedAt",
+}).upgrade(tx => tx.table("products").toCollection().modify(product => {
+  product.minStock ??= 0;
+}));
 export async function openShift(openingCash: number, cashierName: string) {
   wholeRupiah(openingCash);
   if (cashierName.trim().length > 60) throw new Error("Nama kasir maksimal 60 karakter.");

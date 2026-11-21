@@ -17,6 +17,7 @@ export interface Product {
   description?: string;
   photo?: Blob;
   optionGroups?: OptionGroup[];
+  minStock?: number;
 }
 export interface Line {
   productId: string;
@@ -216,6 +217,7 @@ export function validateBackup(v: unknown): Backup {
         (p.description === undefined || typeof p.description === "string") &&
         (p.photo === undefined || validPhoto(p.photo)) &&
         (p.optionGroups === undefined || validOptionGroups(p.optionGroups)) &&
+        (p.minStock === undefined || money(p.minStock)) &&
         money(p.price) &&
         (p.stock === null || money(p.stock)),
     )

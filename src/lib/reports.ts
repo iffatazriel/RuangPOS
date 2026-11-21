@@ -1,5 +1,6 @@
 import { day, type Sale } from "./logic";
 import { optionText } from "./options";
+import { csvDocument } from "./csv";
 
 export type ReportPeriod = "harian" | "mingguan" | "bulanan";
 export function reportRange(period: ReportPeriod, reference: string) {
@@ -143,12 +144,5 @@ export function reportCSV(report: SalesReport, storeName: string) {
       s.items.map(i => `${i.qty}× ${i.name}${i.selectedOptions?.length ? ` (${optionText(i)})` : ""}`).join(" | "),
     ]),
   );
-  const cell = (value: string | number) => {
-    const text =
-      typeof value === "string" && /^[\s]*[=+\-@]/.test(value)
-        ? "'" + value
-        : String(value);
-    return '"' + text.replaceAll('"', '""') + '"';
-  };
-  return "\ufeff" + rows.map((row) => row.map(cell).join(";")).join("\r\n");
+  return csvDocument(rows);
 }

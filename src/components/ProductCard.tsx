@@ -1,6 +1,7 @@
 import { ShoppingCart } from "lucide-react";
 import { rupiah, type Product } from "../lib/logic";
 import { ProductImage } from "./ProductImage";
+import { isLowStock } from "../lib/stock";
 export function ProductCard({
   product: p,
   add,
@@ -23,6 +24,7 @@ export function ProductCard({
           </button>
         </span>
         {p.stock === 0 && <span className="sold-out">Habis</span>}
+        {p.stock !== null && p.stock > 0 && <span className={"stock-badge" + (isLowStock(p) ? " low" : "")}>Sisa {p.stock}</span>}
       </div>
       <div className="product-details">
         <h3>{p.name}</h3>

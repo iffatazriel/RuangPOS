@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Delete, LockKeyhole, ShoppingBag } from "lucide-react";
 import { useData } from "../hooks/useData";
 import { attemptUnlock, resetAllData, setupPin } from "../lib/db";
-import { cooldownSeconds, emptyAttempts } from "../lib/pin";
+import { cooldownSeconds, emptyAttempts, shouldSubmitPinOnEnter } from "../lib/pin";
 import { Modal } from "../components/Modal";
 import { ThemeToggle } from "../components/ThemeToggle";
 
@@ -42,6 +42,8 @@ export function Beranda({ unlock }: { unlock: () => void }) {
         event.preventDefault();
         setPin((value) => value.slice(0, -1));
       } else if (event.key === "Enter") {
+        const activationTarget = event.target instanceof Element ? event.target.closest("button, a") : null;
+        if (!shouldSubmitPinOnEnter(activationTarget?.tagName)) return;
         event.preventDefault();
         form.current?.requestSubmit();
       }
