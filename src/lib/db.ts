@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from "dexie";
 import {
   totals,
+  stockAfterVoid,
   type Product,
   type Category,
   type Sale,
@@ -47,6 +48,7 @@ export async function replaceData(b: Backup) {
 }
 export async function saveSale(sale: Sale) {
   await db.transaction("rw", db.products, db.sales, async () => {
+    const items = [];
     for (const i of sale.items) {
       const p = await db.products.get(i.productId);
       if (!p || !p.active) throw new Error("Produk tidak tersedia.");
@@ -54,8 +56,9 @@ export async function saveSale(sale: Sale) {
         if (p.stock < i.qty) throw new Error(`Stok ${p.name} tidak cukup.`);
         await db.products.update(p.id, { stock: p.stock - i.qty });
       }
+      items.push({ ...i, stockDeducted: p.stock !== null });
     }
-    await db.sales.add(sale);
+    await db.sales.add({ ...sale, items });
   });
 }
 export async function voidSale(id: string) {
@@ -64,8 +67,8 @@ export async function voidSale(id: string) {
     if (!s || s.voided) return;
     for (const i of s.items) {
       const p = await db.products.get(i.productId);
-      if (p && p.stock !== null)
-        await db.products.update(p.id, { stock: p.stock + i.qty });
+      if (p && i.stockDeducted && p.stock !== null)
+        await db.products.update(p.id, { stock: stockAfterVoid(p.stock, i) });
     }
     await db.sales.update(id, { voided: true });
   });

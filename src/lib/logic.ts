@@ -17,6 +17,10 @@ export interface Line {
   emoji: string;
   price: number;
   qty: number;
+  stockDeducted?: boolean;
+}
+export function stockAfterVoid(stock: number | null, item: Line) {
+  return stock !== null && item.stockDeducted ? stock + item.qty : stock;
 }
 export interface Sale {
   id: string;
@@ -154,6 +158,7 @@ export function validateBackup(v: unknown): Backup {
             typeof i.emoji === "string" &&
             money(i.price) &&
             money(i.qty) &&
+            (i.stockDeducted === undefined || typeof i.stockDeducted === "boolean") &&
             i.qty > 0,
         ),
     )
