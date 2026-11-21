@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "./lib/db";
-import { Sidebar } from "./components/Sidebar";
+import { Navigation } from "./components/Navigation";
 import { Topbar } from "./components/Topbar";
 import { Dashboard } from "./pages/Dashboard";
 import { Kasir } from "./pages/Kasir";
@@ -13,9 +13,8 @@ export default function App() {
   const settings = useLiveQuery(() => db.settings.get("store"));
   return (
     <div className="app">
-      <Sidebar name={settings?.name} />
       <div className="shell">
-        <Topbar />
+        <Topbar name={settings?.name} />
         <main>
           <Routes>
             <Route path="/" element={<Dashboard />} />
@@ -25,7 +24,13 @@ export default function App() {
             <Route path="/pengaturan" element={<Pengaturan />} />
           </Routes>
         </main>
+        <footer className="app-footer">
+          <span>© 2026 RuangPOS</span>
+          <span>Dibuat untuk usaha kecil, dengan sepenuh hati.</span>
+          <span>Data Anda tetap di perangkat ini.</span>
+        </footer>
       </div>
+      <Navigation mobile />
     </div>
   );
 }

@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import {
-  ShoppingBag,
-  Search,
-  Plus,
-  Minus,
-  CircleCheck,
-  Trash2,
-} from "lucide-react";
+import { ShoppingCart, ArrowDownAZ, Search } from "lucide-react";
 import { db, defaults, saveSale } from "../lib/db";
 import {
   rupiah,
@@ -17,10 +10,12 @@ import {
   type Sale,
   type Line,
 } from "../lib/logic";
-import { Title } from "../components/Title";
 import { Empty } from "../components/EmptyState";
 import { Receipt } from "../components/Receipt";
-import { shortMoney } from "../lib/format";
+import { ProductCard } from "../components/ProductCard";
+import { CartPanel } from "../components/CartPanel";
+import { browseProducts, defaultCategory, type ProductSort } from "../lib/catalog";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 export function Kasir() {
   const products = useLiveQuery(() => db.products.toArray()) ?? [];
@@ -29,7 +24,12 @@ export function Kasir() {
   const [params] = useSearchParams();
   const location = useLocation();
   const [query, setQuery] = useState<string | null>(null);
-  const [category, setCategory] = useState("");
+  const [selectedCategory, setCategory] = useState<string | null>(null);
+  const [sort, setSort] = useState<ProductSort>("default");
+  const [cartOpen, setCartOpen] = useState(false);
+  const smallScreen = useMediaQuery("(max-width: 1279px)");
+  const sales = useLiveQuery(() => db.sales.toArray()) ?? [];
+  const category = selectedCategory ?? defaultCategory(products, sales);
   const incomingQuery = params.get("q");
   useEffect(() => {
     if (incomingQuery !== null) {
@@ -45,6 +45,13 @@ export function Kasir() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const sum = totals(cart, discount, settings.tax);
+  const visible = browseProducts(
+    products,
+    sales,
+    category,
+    query ?? params.get("q") ?? "",
+    sort,
+  );
   const update = (p: Product) => {
     setCart((c) => {
       const old = c.find((i) => i.productId === p.id);
@@ -89,6 +96,7 @@ export function Kasir() {
         voided: false,
       };
       await saveSale(s);
+      setCartOpen(false);
       setReceipt(s);
       setCart([]);
       setCash(0);
@@ -101,227 +109,148 @@ export function Kasir() {
   }
   return (
     <>
-      <Title eyebrow="LAYANI DENGAN SEPENUH HATI" title="Kasir">
-        <span className="pill">
-          {products.filter((p) => p.active).length} produk tersedia
-        </span>
-      </Title>
       {!products.length ? (
         <Empty />
       ) : (
-        <div className="cashier-layout">
-          <section>
-            <div className="search product-search">
-              <Search size={18} />
-              <input
-                aria-label="Cari di kasir"
-                placeholder="Cari menu favorit..."
-                value={query ?? params.get("q") ?? ""}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+        <div className={"cashier-layout" + (cartOpen ? " drawer-open" : "")}>
+          <section className="catalog">
+            <div className="catalog-heading">
+              <div>
+                <p className="eyebrow">MENU PILIHAN UNTUK PELANGGAN ANDA</p>
+                <h1>Kategori</h1>
+                <p>Temukan favorit, ciptakan momen nikmat.</p>
+              </div>
+              <div className="search product-search">
+                <Search size={18} />
+                <input
+                  aria-label="Cari di kasir"
+                  placeholder="Cari menu favorit..."
+                  value={query ?? params.get("q") ?? ""}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                <kbd>⌕</kbd>
+              </div>
             </div>
             <div className="chips">
+              <button
+                className={category === "best" ? "selected" : ""}
+                onClick={() => setCategory("best")}
+              >
+                <span className="category-icon">⭐</span>Terlaris
+              </button>
               <button
                 className={!category ? "selected" : ""}
                 onClick={() => setCategory("")}
               >
-                Semua produk
+                <span className="category-icon">🍽</span>Semua
               </button>
-              {categories.map((c) => (
+              {categories.map((c, i) => (
                 <button
                   className={category === c.id ? "selected" : ""}
                   key={c.id}
                   onClick={() => setCategory(c.id)}
                 >
+                  <span className="category-icon">
+                    {products.find((p) => p.category === c.id)?.emoji ??
+                      ["☕", "🍵", "🍛", "🍞"][i % 4]}
+                  </span>
                   {c.name}
                 </button>
               ))}
             </div>
+            <div className="catalog-section-heading">
+              <div>
+                <h2>
+                  {category === "best"
+                    ? "Favorit pelanggan"
+                    : category
+                      ? categories.find((c) => c.id === category)?.name
+                      : "Semua menu"}
+                  <span className="catalog-count">{visible.length} menu</span>
+                </h2>
+                <p>
+                  {category === "best"
+                    ? "Pilihan paling dicintai dalam 30 hari terakhir."
+                    : "Setiap sajian punya cerita. Pilih yang paling Anda suka."}
+                </p>
+              </div>
+              <button
+                className="sort-button"
+                onClick={() =>
+                  setSort(
+                    sort === "default"
+                      ? "asc"
+                      : sort === "asc"
+                        ? "desc"
+                        : "default",
+                  )
+                }
+              >
+                <ArrowDownAZ size={16} />
+                {sort === "default"
+                  ? "A–Z"
+                  : sort === "asc"
+                    ? "A–Z ↑"
+                    : "Z–A ↓"}
+              </button>
+            </div>
             <div className="product-grid">
-              {products
-                .filter(
-                  (p) =>
-                    p.active &&
-                    (!category || p.category === category) &&
-                    p.name
-                      .toLowerCase()
-                      .includes((query ?? params.get("q") ?? "").toLowerCase()),
-                )
-                .map((p) => (
-                  <button
-                    className="product-card"
-                    key={p.id}
-                    onClick={() => update(p)}
-                    disabled={p.stock === 0}
-                  >
-                    <span className="product-art">{p.emoji}</span>
-                    <small>
-                      {categories.find((c) => c.id === p.category)?.name ??
-                        "Lainnya"}
-                    </small>
-                    <strong>{p.name}</strong>
-                    <div>
-                      <b>{rupiah(p.price)}</b>
-                      <span className="add-circle">
-                        <Plus size={16} />
-                      </span>
-                    </div>
-                    <small>
-                      {p.stock === null
-                        ? "Stok tidak dibatasi"
-                        : `${p.stock} tersedia`}
-                    </small>
-                  </button>
-                ))}
-            </div>
-          </section>
-          <section className="panel cart">
-            <div className="section-heading">
-              <h2>Pesanan baru</h2>
-              <span className="pill">
-                {cart.reduce((s, i) => s + i.qty, 0)} item
-              </span>
-            </div>
-            <div className="cart-items">
-              {cart.length ? (
-                cart.map((i) => (
-                  <div className="cart-item" key={i.productId}>
-                    <span className="product-emoji">{i.emoji}</span>
-                    <div>
-                      <strong>{i.name}</strong>
-                      <small>{rupiah(i.price)}</small>
-                      <div className="quantity">
-                        <button
-                          aria-label={"Kurangi " + i.name}
-                          onClick={() =>
-                            setCart((c) =>
-                              c.flatMap((x) =>
-                                x.productId === i.productId
-                                  ? x.qty > 1
-                                    ? [{ ...x, qty: x.qty - 1 }]
-                                    : []
-                                  : [x],
-                              ),
-                            )
-                          }
-                        >
-                          <Minus size={13} />
-                        </button>
-                        {i.qty}
-                        <button
-                          aria-label={"Tambah " + i.name}
-                          onClick={() => {
-                            const p = products.find(
-                              (p) => p.id === i.productId,
-                            );
-                            if (p) update(p);
-                          }}
-                        >
-                          <Plus size={13} />
-                        </button>
-                        <button
-                          aria-label={"Hapus " + i.name}
-                          onClick={() =>
-                            setCart((c) =>
-                              c.filter((x) => x.productId !== i.productId),
-                            )
-                          }
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                    <b>{rupiah(i.price * i.qty)}</b>
-                  </div>
-                ))
-              ) : (
-                <div className="no-data">
-                  <ShoppingBag size={35} />
-                  <p>Keranjang masih kosong</p>
-                  <small>Pilih produk untuk memulai pesanan.</small>
-                </div>
-              )}
-            </div>
-            <div className="totals">
-              <p>
-                <span>Subtotal</span>
-                <b>{rupiah(sum.subtotal)}</b>
-              </p>
-              <label>
-                Diskon (Rp)
-                <input
-                  aria-label="Diskon"
-                  type="number"
-                  min="0"
-                  value={discount}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
-                />
-              </label>
-              <p>
-                <span>Pajak ({settings.tax}%)</span>
-                <b>{rupiah(sum.tax)}</b>
-              </p>
-              <p className="grand-total">
-                <span>Total pembayaran</span>
-                <b>{rupiah(sum.total)}</b>
-              </p>
-            </div>
-            <div className="payment-method">
-              {["Tunai", "QRIS", "Transfer"].map((m) => (
-                <button
-                  className={method === m ? "selected" : ""}
-                  key={m}
-                  onClick={() => setMethod(m)}
-                >
-                  {m}
-                </button>
+              {visible.map((p) => (
+                <ProductCard key={p.id} product={p} add={update} />
               ))}
             </div>
-            {method === "Tunai" ? (
-              <>
-                <label>
-                  Uang diterima (Rp)
-                  <input
-                    type="number"
-                    min="0"
-                    value={cash || ""}
-                    placeholder="0"
-                    step="1"
-                    inputMode="numeric"
-                    onChange={(e) => setCash(Math.max(0, Math.trunc(Number(e.target.value))))}
-                  />
-                </label>
-                <div className="quick-cash">
-                  {[sum.total, 50000, 100000].map((n, i) => (
-                    <button key={i} onClick={() => setCash(n)}>
-                      {i === 0 ? "Uang pas" : shortMoney(n)}
-                    </button>
-                  ))}
-                </div>
-                <p className="change">
-                  Kembalian <b>{rupiah(Math.max(0, cash - sum.total))}</b>
-                </p>
-              </>
-            ) : (
-              <p className="notice">
-                Pastikan pembayaran {method} sudah diterima sebelum menyimpan.
-              </p>
+            {!visible.length && (
+              <div className="no-data">
+                <Search size={30} />
+                <h2>Belum ada menu yang cocok</h2>
+                <p>Coba kata kunci lain atau pilih kategori Semua.</p>
+                <button
+                  onClick={() => {
+                    setQuery("");
+                    setCategory("");
+                  }}
+                >
+                  Lihat semua menu
+                </button>
+              </div>
             )}
-            {error && (
-              <p role="alert" className="error">
-                {error}
-              </p>
-            )}
-            <button
-              className="primary pay"
-              disabled={!cart.length || busy}
-              onClick={() => void pay()}
-            >
-              <CircleCheck size={18} />
-              {busy ? "Menyimpan..." : "Simpan transaksi"}
-            </button>
           </section>
+          <button
+            className="cart-overlay"
+            aria-label="Tutup keranjang"
+            onClick={() => setCartOpen(false)}
+          />
+          <CartPanel
+            modal={cartOpen && smallScreen}
+            {...{
+              cart,
+              setCart,
+              products,
+              update,
+              settings,
+              sum,
+              discount,
+              setDiscount,
+              method,
+              setMethod,
+              cash,
+              setCash,
+              error,
+              busy,
+              pay,
+            }}
+            close={() => setCartOpen(false)}
+          />
         </div>
+      )}
+      {!!products.length && (
+        <button className="floating-cart" onClick={() => setCartOpen(true)}>
+          <ShoppingCart size={20} />
+          <span>
+            Lihat keranjang <b>{cart.reduce((s, i) => s + i.qty, 0)}</b>
+          </span>
+          <strong>{rupiah(sum.total)}</strong>
+        </button>
       )}
       {receipt && (
         <Receipt

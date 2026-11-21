@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from "dexie";
+import { photoDataURL, photoBlob } from "./photos";
 import {
   totals,
   stockAfterVoid,
@@ -27,20 +28,41 @@ db.version(1).stores({
   sales: "id, date",
   settings: "id",
 });
+db.version(2).stores({
+  products: "id, category, active",
+  categories: "id",
+  sales: "id, date",
+  settings: "id",
+});
 export { db };
 export async function getBackup(): Promise<Backup> {
-  return db.transaction("r", db.tables, async () => ({
+  const snapshot = await db.transaction("r", db.tables, async () => ({
     version: 1,
     products: await db.products.toArray(),
     categories: await db.categories.toArray(),
     sales: await db.sales.toArray(),
     settings: (await db.settings.get("store")) ?? defaults,
   }));
+  return {
+    ...snapshot,
+    version: 1,
+    products: await Promise.all(
+      snapshot.products.map(async ({ photo, ...p }) => ({
+        ...p,
+        ...(photo ? { photo: await photoDataURL(photo) } : {}),
+      })),
+    ),
+  };
 }
 export async function replaceData(b: Backup) {
   await db.transaction("rw", db.tables, async () => {
     await Promise.all(db.tables.map((t) => t.clear()));
-    await db.products.bulkPut(b.products);
+    await db.products.bulkPut(
+      b.products.map(({ photo, ...p }) => ({
+        ...p,
+        ...(photo ? { photo: photoBlob(photo) } : {}),
+      })),
+    );
     await db.categories.bulkPut(b.categories);
     await db.sales.bulkPut(b.sales);
     await db.settings.put({ ...b.settings, id: "store" });
@@ -80,7 +102,7 @@ export async function seed() {
     { id: "makanan", name: "Makanan" },
     { id: "camilan", name: "Camilan" },
   ];
-  const products: Product[] = [
+  const products = [
     ["Es Kopi Susu", "kopi", 18000, "🧋"],
     ["Americano", "kopi", 15000, "☕"],
     ["Cappuccino", "kopi", 22000, "☕"],
@@ -97,6 +119,7 @@ export async function seed() {
     emoji: String(p[3]),
     stock: 100,
     active: true,
+    description: `${p[0]} favorit, disiapkan segar untuk menemani hari Anda.`,
   }));
   const sales: Sale[] = [];
   for (let d = 29; d >= 0; d--)

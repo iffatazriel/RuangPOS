@@ -10,6 +10,8 @@ export interface Product {
   stock: number | null;
   emoji: string;
   active: boolean;
+  description?: string;
+  photo?: Blob;
 }
 export interface Line {
   productId: string;
@@ -43,7 +45,7 @@ export interface Settings {
 }
 export interface Backup {
   version: 1;
-  products: Product[];
+  products: (Omit<Product, "photo"> & { photo?: string })[];
   categories: Category[];
   sales: Sale[];
   settings: Settings;
@@ -98,6 +100,21 @@ const obj = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object";
 const money = (v: unknown): v is number =>
   Number.isSafeInteger(v) && (v as number) >= 0;
+export function validPhoto(value: unknown): value is string {
+  if (typeof value !== "string" || value.length > 4_000_000) return false;
+  const match = /^data:image\/(jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+    value,
+  );
+  if (!match || match[2].length % 4 !== 0) return false;
+  try {
+    const bytes = atob(match[2]);
+    return match[1] === "jpeg"
+      ? bytes.startsWith("\xff\xd8\xff") && bytes.endsWith("\xff\xd9")
+      : bytes.startsWith("RIFF") && bytes.slice(8, 12) === "WEBP";
+  } catch {
+    return false;
+  }
+}
 export function validateBackup(v: unknown): Backup {
   if (
     !obj(v) ||
@@ -134,6 +151,8 @@ export function validateBackup(v: unknown): Backup {
         typeof p.category === "string" &&
         typeof p.emoji === "string" &&
         typeof p.active === "boolean" &&
+        (p.description === undefined || typeof p.description === "string") &&
+        (p.photo === undefined || validPhoto(p.photo)) &&
         money(p.price) &&
         (p.stock === null || money(p.stock)),
     )
@@ -158,7 +177,8 @@ export function validateBackup(v: unknown): Backup {
             typeof i.emoji === "string" &&
             money(i.price) &&
             money(i.qty) &&
-            (i.stockDeducted === undefined || typeof i.stockDeducted === "boolean") &&
+            (i.stockDeducted === undefined ||
+              typeof i.stockDeducted === "boolean") &&
             i.qty > 0,
         ),
     )
