@@ -14,7 +14,7 @@ import { Empty } from "../components/EmptyState";
 import { Receipt } from "../components/Receipt";
 import { ProductCard } from "../components/ProductCard";
 import { CartPanel } from "../components/CartPanel";
-import { browseProducts, type ProductSort } from "../lib/catalog";
+import { browseProducts, defaultCategory, type ProductSort } from "../lib/catalog";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 
 export function Kasir() {
@@ -24,11 +24,12 @@ export function Kasir() {
   const [params] = useSearchParams();
   const location = useLocation();
   const [query, setQuery] = useState<string | null>(null);
-  const [category, setCategory] = useState("best");
+  const [selectedCategory, setCategory] = useState<string | null>(null);
   const [sort, setSort] = useState<ProductSort>("default");
   const [cartOpen, setCartOpen] = useState(false);
   const smallScreen = useMediaQuery("(max-width: 1279px)");
   const sales = useLiveQuery(() => db.sales.toArray()) ?? [];
+  const category = selectedCategory ?? defaultCategory(products, sales);
   const incomingQuery = params.get("q");
   useEffect(() => {
     if (incomingQuery !== null) {

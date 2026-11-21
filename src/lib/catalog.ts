@@ -1,5 +1,10 @@
 import { day, type Product, type Sale } from "./logic";
 export type ProductSort = "default" | "asc" | "desc";
+export function defaultCategory(products: Product[], sales: Sale[], now = new Date()) {
+  return browseProducts(products, sales, "best", "", "default", now).length
+    ? "best"
+    : "";
+}
 export function browseProducts(
   products: Product[],
   sales: Sale[],
@@ -23,13 +28,13 @@ export function browseProducts(
   const result = products.filter(
     (p) =>
       p.active &&
-      (!category ||
+      (query.trim() || !category ||
         (category === "best"
           ? quantities.has(p.id)
           : p.category === category)) &&
       p.name
         .toLocaleLowerCase("id-ID")
-        .includes(query.toLocaleLowerCase("id-ID")),
+        .includes(query.trim().toLocaleLowerCase("id-ID")),
   );
   if (sort !== "default")
     result.sort(
