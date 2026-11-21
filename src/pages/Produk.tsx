@@ -5,11 +5,13 @@ import { db } from "../lib/db";
 import { rupiah, type Product } from "../lib/logic";
 import { Title } from "../components/Title";
 import { Modal } from "../components/Modal";
+import { productChanges } from "../lib/product";
 
 export function Produk() {
   const products = useLiveQuery(() => db.products.toArray()) ?? [];
   const categories = useLiveQuery(() => db.categories.toArray()) ?? [];
   const [edit, setEdit] = useState<Product | null>(null);
+  const [originalStock, setOriginalStock] = useState<Product["stock"]>(null);
   const [cat, setCat] = useState("");
   const [manage, setManage] = useState(false);
   const [query, setQuery] = useState("");
@@ -83,7 +85,7 @@ export function Produk() {
                       </span>
                     </td>
                     <td>
-                      <button onClick={() => setEdit(p)}>Edit</button>{" "}
+                      <button onClick={() => { setOriginalStock(p.stock); setEdit(p); }}>Edit</button>{" "}
                       <button
                         aria-label={"Hapus " + p.name}
                         onClick={() => {
@@ -122,7 +124,11 @@ export function Produk() {
             className="form-grid"
             onSubmit={async (e) => {
               e.preventDefault();
-              await db.products.put(edit);
+              if (products.some((p) => p.id === edit.id)) {
+                await db.products.update(edit.id, productChanges(originalStock, edit));
+              } else {
+                await db.products.add(edit);
+              }
               setEdit(null);
             }}
           >

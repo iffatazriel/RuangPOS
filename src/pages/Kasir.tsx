@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   ShoppingBag,
@@ -27,8 +27,16 @@ export function Kasir() {
   const categories = useLiveQuery(() => db.categories.toArray()) ?? [];
   const settings = useLiveQuery(() => db.settings.get("store")) ?? defaults;
   const [params] = useSearchParams();
+  const location = useLocation();
   const [query, setQuery] = useState<string | null>(null);
   const [category, setCategory] = useState("");
+  const incomingQuery = params.get("q");
+  useEffect(() => {
+    if (incomingQuery !== null) {
+      setQuery(incomingQuery);
+      setCategory("");
+    }
+  }, [incomingQuery, location.key]);
   const [cart, setCart] = useState<Line[]>([]);
   const [discount, setDiscount] = useState(0);
   const [method, setMethod] = useState("Tunai");
@@ -61,6 +69,10 @@ export function Kasir() {
   async function pay() {
     setError("");
     if (!cart.length) return;
+    if (method === "Tunai" && (!Number.isSafeInteger(cash) || cash < 0)) {
+      setError("Uang diterima harus berupa Rupiah bulat.");
+      return;
+    }
     if (method === "Tunai" && cash < sum.total) {
       setError("Uang diterima belum cukup.");
       return;
@@ -274,7 +286,9 @@ export function Kasir() {
                     min="0"
                     value={cash || ""}
                     placeholder="0"
-                    onChange={(e) => setCash(Number(e.target.value))}
+                    step="1"
+                    inputMode="numeric"
+                    onChange={(e) => setCash(Math.max(0, Math.trunc(Number(e.target.value))))}
                   />
                 </label>
                 <div className="quick-cash">
