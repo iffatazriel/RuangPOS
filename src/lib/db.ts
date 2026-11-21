@@ -29,13 +29,13 @@ db.version(1).stores({
 });
 export { db };
 export async function getBackup(): Promise<Backup> {
-  return {
+  return db.transaction("r", db.tables, async () => ({
     version: 1,
     products: await db.products.toArray(),
     categories: await db.categories.toArray(),
     sales: await db.sales.toArray(),
     settings: (await db.settings.get("store")) ?? defaults,
-  };
+  }));
 }
 export async function replaceData(b: Backup) {
   await db.transaction("rw", db.tables, async () => {
