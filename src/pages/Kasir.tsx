@@ -18,9 +18,14 @@ import { CartPanel } from "../components/CartPanel";
 import { browseProducts, defaultCategory, type ProductSort } from "../lib/catalog";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { checkoutDetails } from "../lib/payments";
+import { addCartLine, optionLine } from "../lib/options";
+import { OptionPicker } from "../components/OptionPicker";
+import { ShiftControls } from "../components/ShiftControls";
 
 export function Kasir() {
-  const { products, categories, settings, sales } = useData();
+  const { products, categories, settings, sales, shifts } = useData();
+  const activeShift = shifts.find(s => s.status === "open");
+  const [picking, setPicking] = useState<Product | null>(null);
   const [params] = useSearchParams();
   const location = useLocation();
   const [query, setQuery] = useState<string | null>(null);
@@ -56,29 +61,25 @@ export function Kasir() {
     sort,
   );
   const update = (p: Product) => {
-    setCart((c) => {
-      const old = c.find((i) => i.productId === p.id);
-      if (p.stock !== null && (old?.qty ?? 0) >= p.stock) {
-        setError("Stok produk tidak cukup.");
-        return c;
-      }
-      return old
-        ? c.map((i) => (i.productId === p.id ? { ...i, qty: i.qty + 1 } : i))
-        : [
-            ...c,
-            {
-              productId: p.id,
-              name: p.name,
-              emoji: p.emoji,
-              price: p.price,
-              qty: 1,
-            },
-          ];
-    });
+    if (p.optionGroups?.length) setPicking(p);
+    else {
+      try { addLine(optionLine(p)); }
+      catch (error) { setError((error as Error).message); }
+    }
+  };
+  function addLine(line: Line) {
+    const product = products.find(p => p.id === line.productId);
+    if (!product || !product.active) throw new Error("Produk tidak tersedia.");
+    setCart(addCartLine(cart, line, product.stock));
+    setError("");
+  }
+  const increment = (line: Line) => {
+    try { addLine(line); } catch (error) { setError((error as Error).message); }
   };
   async function pay() {
     setError("");
     if (!cart.length) return;
+    if (!activeShift) { setError("Buka shift sebelum menyimpan transaksi."); return; }
     let details;
     try { details = checkoutDetails(customerName, method, settings, accountId); }
     catch (error) { setError((error as Error).message); return; }
@@ -94,6 +95,7 @@ export function Kasir() {
     try {
       const s: Sale = {
         ...details,
+        shiftId: activeShift.id,
         taxEnabled: settings.taxEnabled,
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
@@ -118,6 +120,7 @@ export function Kasir() {
   }
   return (
     <>
+      <ShiftControls />
       {!products.length ? (
         <Empty />
       ) : (
@@ -234,8 +237,7 @@ export function Kasir() {
             {...{
               cart,
               setCart,
-              products,
-              update,
+              increment,
               settings,
               sum,
               discount,
@@ -252,6 +254,7 @@ export function Kasir() {
               busy,
               pay,
             }}
+            shiftOpen={!!activeShift}
             close={() => setCartOpen(false)}
           />
         </div>
@@ -272,6 +275,7 @@ export function Kasir() {
           close={() => setReceipt(null)}
         />
       )}
+      {picking && <OptionPicker product={picking} add={addLine} close={() => setPicking(null)} />}
     </>
   );
 }

@@ -8,6 +8,8 @@ import { Modal } from "../components/Modal";
 import { productChanges } from "../lib/product";
 import { ProductImage } from "../components/ProductImage";
 import { resizePhoto } from "../lib/photos";
+import { validOptionGroups } from "../lib/options";
+import { OptionGroupsEditor } from "../components/OptionGroupsEditor";
 
 export function Produk() {
   const { products, categories } = useData();
@@ -18,6 +20,7 @@ export function Produk() {
   const [query, setQuery] = useState("");
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState("");
+  const [optionError, setOptionError] = useState("");
   return (
     <>
       <Title eyebrow="KELOLA YANG ANDA TAWARKAN" title="Produk">
@@ -25,7 +28,8 @@ export function Produk() {
           <button onClick={() => setManage(true)}>Kelola kategori</button>
           <button
             className="primary"
-            onClick={() =>
+            onClick={() => {
+              setOptionError("");
               setEdit({
                 id: crypto.randomUUID(),
                 name: "",
@@ -34,8 +38,8 @@ export function Produk() {
                 stock: null,
                 emoji: "☕",
                 active: true,
-              })
-            }
+              });
+            }}
           >
             <Plus size={17} /> Tambah produk
           </button>
@@ -95,6 +99,7 @@ export function Produk() {
                     <td>
                       <button
                         onClick={() => {
+                          setOptionError("");
                           setOriginalStock(p.stock);
                           setEdit(p);
                         }}
@@ -139,6 +144,11 @@ export function Produk() {
             className="form-grid"
             onSubmit={async (e) => {
               e.preventDefault();
+              if (!validOptionGroups(edit.optionGroups ?? [])) {
+                setOptionError("Lengkapi grup dan pilihan dengan nama unik serta selisih harga Rupiah bulat.");
+                return;
+              }
+              setOptionError("");
               if (products.some((p) => p.id === edit.id)) {
                 await db.products.update(
                   edit.id,
@@ -286,6 +296,8 @@ export function Produk() {
               />{" "}
               Produk aktif
             </label>
+            <OptionGroupsEditor groups={edit.optionGroups ?? []} change={optionGroups => { setEdit({ ...edit, optionGroups }); setOptionError(""); }} />
+            {optionError && <p className="error" role="alert">{optionError}</p>}
             <button className="primary" disabled={photoBusy}>
               Simpan produk
             </button>

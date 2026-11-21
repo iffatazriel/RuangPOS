@@ -1,6 +1,7 @@
 import { Printer } from "lucide-react";
 import { rupiah, PPN_RATE, type Sale, type Settings } from "../lib/logic";
 import { Modal } from "./Modal";
+import { lineKey, optionText } from "../lib/options";
 
 export function Receipt({
   sale: s,
@@ -27,9 +28,10 @@ export function Receipt({
         <hr />
         <p>Pembeli: {s.customerName ?? "—"}</p>
         {s.items.map((i) => (
-          <p className="receipt-row" key={i.productId}>
+          <p className="receipt-row" key={lineKey(i)}>
             <span>
               {i.qty}× {i.name}
+              {!!i.selectedOptions?.length && <small className="line-options">{optionText(i)}</small>}
             </span>
             <b>{rupiah(i.price * i.qty)}</b>
           </p>

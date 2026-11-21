@@ -7,17 +7,17 @@ import { ShoppingBag, Plus, Minus, CircleCheck, Trash2, X } from "lucide-react";
 import {
   rupiah,
   PPN_RATE,
-  type Product,
   type Line,
   type Settings,
   type totals,
 } from "../lib/logic";
 import { shortMoney } from "../lib/format";
+import { lineKey, optionText } from "../lib/options";
 type Props = {
   cart: Line[];
   setCart: Dispatch<SetStateAction<Line[]>>;
-  products: Product[];
-  update: (product: Product) => void;
+  increment: (line: Line) => void;
+  shiftOpen: boolean;
   settings: Settings;
   sum: ReturnType<typeof totals>;
   discount: number;
@@ -39,8 +39,8 @@ type Props = {
 export function CartPanel({
   cart,
   setCart,
-  products,
-  update,
+  increment,
+  shiftOpen,
   settings,
   sum,
   discount,
@@ -89,10 +89,11 @@ export function CartPanel({
       <div className="cart-items">
         {cart.length ? (
           cart.map((i) => (
-            <div className="cart-item" key={i.productId}>
+            <div className="cart-item" key={lineKey(i)}>
               <span className="product-emoji">{i.emoji}</span>
               <div>
                 <strong>{i.name}</strong>
+                {!!i.selectedOptions?.length && <small>{optionText(i)}</small>}
                 <small>{rupiah(i.price)}</small>
                 <div className="quantity">
                   <button
@@ -100,7 +101,7 @@ export function CartPanel({
                     onClick={() =>
                       setCart((c) =>
                         c.flatMap((x) =>
-                          x.productId === i.productId
+                          lineKey(x) === lineKey(i)
                             ? x.qty > 1
                               ? [{ ...x, qty: x.qty - 1 }]
                               : []
@@ -114,10 +115,7 @@ export function CartPanel({
                   {i.qty}
                   <button
                     aria-label={"Tambah " + i.name}
-                    onClick={() => {
-                      const p = products.find((p) => p.id === i.productId);
-                      if (p) update(p);
-                    }}
+                    onClick={() => increment(i)}
                   >
                     <Plus size={13} />
                   </button>
@@ -125,7 +123,7 @@ export function CartPanel({
                     aria-label={"Hapus " + i.name}
                     onClick={() =>
                       setCart((c) =>
-                        c.filter((x) => x.productId !== i.productId),
+                        c.filter((x) => lineKey(x) !== lineKey(i)),
                       )
                     }
                   >
@@ -226,11 +224,11 @@ export function CartPanel({
       )}
       <button
         className="primary pay"
-        disabled={!cart.length || busy || (method === "QRIS" && !settings.qris) || (method === "Transfer" && !accountId)}
+        disabled={!shiftOpen || !cart.length || busy || (method === "QRIS" && !settings.qris) || (method === "Transfer" && !accountId)}
         onClick={() => void pay()}
       >
         <CircleCheck size={18} />
-        {busy ? "Menyimpan..." : "Simpan transaksi"}
+        {busy ? "Menyimpan..." : !shiftOpen ? "Buka shift dahulu" : "Simpan transaksi"}
       </button>
     </section>
   );

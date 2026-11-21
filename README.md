@@ -12,12 +12,18 @@ Kasir lokal gratis dan terbuka untuk warung, kafe, dan UMKM Indonesia. Tanpa bac
 - Profil usaha, cadangan JSON tervalidasi, dan data contoh 30 hari.
 - Nama pembeli, QRIS usaha (gambar lokal), rekening transfer, dan PPN 11% opsional setelah diskon. Rekening pada struk merupakan salinan saat transaksi.
 - Beranda dengan PIN 6 digit, jeda 30 detik setelah 5 kesalahan, dan kunci otomatis setelah 15 menit tanpa aktivitas.
-- PWA responsif, font lokal DM Sans, IndexedDB (Dexie skema versi 4, kompatibel dengan data lama), bekerja offline setelah kunjungan awal.
+- Shift kasir: modal awal, nama kasir opsional, rekonsiliasi uang fisik/selisih, dan laporan tutup shift yang dapat dicetak. Hanya satu shift terbuka; transaksi baru wajib terhubung ke shift.
+- Varian dan tambahan produk: grup wajib/opsional, pilihan tunggal/jamak, selisih harga, dan rincian pilihan pada keranjang, struk, riwayat, serta export ringkasan.
+- PWA responsif, font lokal DM Sans, IndexedDB (Dexie skema versi 5, kompatibel dengan data lama), bekerja offline setelah kunjungan awal.
 
 ## Menggunakan PWA
 Buka URL RuangPOS yang disediakan pengelola hosting Anda melalui HTTPS. Buat PIN 6 digit dan ulangi untuk konfirmasi. Tambahkan produk di **Produk**, atau pilih **Isi data contoh**. Atur profil, QRIS, rekening, dan PPN di **Pengaturan**, lalu mulai menjual di **Kasir**. QRIS dan Transfer adalah pencatatan manual, bukan integrasi pembayaran; selalu pastikan dana sudah diterima.
 
 Di Chrome/Edge pilih **Install aplikasi** di menu browser; di Safari iPhone pilih **Bagikan → Tambahkan ke Layar Utama**. Buka sekali saat online agar aset tersimpan, lalu aplikasi dapat digunakan tanpa internet. Tidak ada URL hosted resmi yang diasumsikan oleh proyek ini.
+
+Di **Kasir**, pilih **Buka shift** dan isi modal awal sebelum menyimpan transaksi. Tutup melalui Kasir atau Transaksi, masukkan uang fisik yang dihitung, lalu simpan. Kas seharusnya adalah modal awal + total penjualan Tunai setelah diskon, PPN, dan kembalian (transaksi batal dikecualikan). **Riwayat shift** menyimpan snapshot saat tutup; pembatalan sesudah tutup tidak mengubah snapshot, tetapi ditandai pada detail. Transaksi lama tanpa shift tetap tersedia tanpa dibuatkan modal awal fiktif.
+
+Atur **Varian & tambahan** pada modal produk; gunakan tombol panah untuk mengurutkan grup/pilihan. Produk bervarian meminta pilihan saat ditambahkan. Pilihan sama digabung, pilihan berbeda memiliki baris terpisah namun menggunakan stok produk yang sama. Nama/harga pilihan disalin ke transaksi agar perubahan katalog tidak mengubah struk lama. Cadangan JSON mencakup shift dan varian; cadangan lama tanpa keduanya tetap didukung.
 
 ## Privasi & cadangan
 **Semua data tetap di browser/perangkat Anda.** Tidak ada sinkronisasi cloud atau akun. Tiap browser dan alamat situs memiliki penyimpanan terpisah. Mode privat, pembersihan data browser, kerusakan perangkat, atau penghapusan aplikasi dapat menghilangkan data. Ekspor cadangan JSON secara rutin melalui Pengaturan dan simpan di lokasi aman. Impor mengganti data usaha setelah konfirmasi, tetapi tidak mengganti PIN perangkat. File cadangan berisi gambar QRIS dan rekening; jangan bagikan sembarangan.

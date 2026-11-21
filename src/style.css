@@ -1974,6 +1974,25 @@ label textarea {
   gap: 25px;
   color: var(--muted);
 }
+.shift-control, .shift-history { margin-bottom: 24px; }
+.shift-history { margin-top: 24px; }
+.shift-control .section-heading { margin-bottom: 0; }
+.shift-opening { align-items: end; margin-top: 16px; }
+.shift-difference { padding: 12px; border: 1px solid currentColor; border-radius: 10px; }
+.shift-difference.short { color: #bd3333; }
+.shift-difference.over { color: #197649; }
+.shift-difference.balanced { color: var(--muted); }
+html[data-theme="dark"] .shift-difference.short { color: #ff9999; }
+html[data-theme="dark"] .shift-difference.over { color: #8fe1b1; }
+.option-editor { display: grid; gap: 16px; }
+.option-group { min-width: 0; border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.option-group legend { padding: 0 5px; }
+.option-row { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.option-row .actions { grid-column: 1 / -1; }
+.option-row input { min-width: 0; width: 100%; }
+.option-choice { justify-content: start; }
+.option-choice span { margin-left: auto; }
+.line-options { display: block; white-space: normal; line-height: 1.6; }
 .skeleton {
   height: 140px;
   border-radius: 18px;

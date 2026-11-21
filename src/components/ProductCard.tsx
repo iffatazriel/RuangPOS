@@ -9,14 +9,14 @@ export function ProductCard({
   add: (product: Product) => void;
 }) {
   return (
-    <article className="product-card">
+    <article className="product-card" onClick={() => { if (p.stock !== 0) add(p); }}>
       <div className="product-visual">
         <ProductImage photo={p.photo} emoji={p.emoji} name={p.name} />
         <span className="cart-notch">
           <button
             className="add-product"
             aria-label={`Tambah ${p.name} ke keranjang`}
-            onClick={() => add(p)}
+            onClick={e => { e.stopPropagation(); add(p); }}
             disabled={p.stock === 0}
           >
             <ShoppingCart size={19} />
