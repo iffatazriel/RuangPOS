@@ -50,7 +50,7 @@ export function Dashboard() {
           />
         ))}
       </div>
-      {products === 0 ? (
+      {products === 0 && sales.length === 0 ? (
         <Empty />
       ) : (
         <div className="dashboard-grid">
