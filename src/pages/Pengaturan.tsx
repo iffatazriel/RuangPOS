@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useData } from "../hooks/useData";
 import { ShoppingBag, X, Download, Upload, Sprout, Trash2 } from "lucide-react";
-import { db, defaults, seed, getBackup, replaceData } from "../lib/db";
+import { db, defaults, seed, getBackup, replaceData, resetAllData } from "../lib/db";
 import { day, PPN_RATE, validateBackup, type Settings } from "../lib/logic";
 import { Title } from "../components/Title";
 import { PaymentSettings } from "../components/PaymentSettings";
+import { PinSettings } from "../components/PinSettings";
 
 export function Pengaturan() {
-  const settings = useLiveQuery(() => db.settings.get("store"));
+  const { settings } = useData();
   const [form, setForm] = useState<Settings | null>(null);
   const [message, setMessage] = useState("");
   const s = form ?? settings ?? defaults;
@@ -93,6 +94,7 @@ export function Pengaturan() {
         </section>
         <div className="settings-side">
           <PaymentSettings settings={settings ?? defaults} />
+          <PinSettings />
           <section className="panel">
             <div className="section-heading">
               <div>
@@ -156,13 +158,7 @@ export function Pengaturan() {
                   ) &&
                   confirm("Anda yakin? Semua data akan hilang permanen.")
                 ) {
-                  await replaceData({
-                    version: 1,
-                    products: [],
-                    categories: [],
-                    sales: [],
-                    settings: { ...defaults, qris: undefined },
-                  });
+                  await resetAllData();
                   setForm(null);
                   setMessage("Semua data telah dihapus.");
                 }

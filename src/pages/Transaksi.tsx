@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db, defaults, voidSale } from "../lib/db";
+import { useData } from "../hooks/useData";
+import { voidSale } from "../lib/db";
 import { day, rupiah, type Sale } from "../lib/logic";
 import { Title } from "../components/Title";
 import { Receipt } from "../components/Receipt";
 
 export function Transaksi() {
-  const sales =
-    useLiveQuery(() => db.sales.orderBy("date").reverse().toArray()) ?? [];
-  const settings = useLiveQuery(() => db.settings.get("store")) ?? defaults;
+  const { sales, settings } = useData();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState(day());
   const [detail, setDetail] = useState<Sale | null>(null);

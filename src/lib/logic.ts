@@ -1,3 +1,5 @@
+import type { PinCredential, PinAttempts } from "./pin";
+
 export interface Category {
   id: string;
   name: string;
@@ -54,6 +56,8 @@ export interface Settings {
   taxEnabled: boolean;
   qris?: Blob;
   bankAccounts: BankAccount[];
+  pin?: PinCredential;
+  pinLock?: PinAttempts;
 }
 export type LegacySettings = Omit<Settings, "taxEnabled" | "bankAccounts"> & {
   taxEnabled?: boolean;
@@ -74,7 +78,12 @@ export interface Backup {
   products: (Omit<Product, "photo"> & { photo?: string })[];
   categories: Category[];
   sales: Sale[];
-  settings: Omit<Settings, "qris"> & { qris?: string };
+  settings: Omit<Settings, "qris" | "pin" | "pinLock"> & { qris?: string };
+}
+export function withoutPin<T>(settings: T): Omit<T, "pin" | "pinLock"> {
+  const { pin: _pin, pinLock: _lock, ...rest } = settings as T & { pin?: unknown; pinLock?: unknown };
+  void _pin; void _lock;
+  return rest;
 }
 export const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -240,7 +249,7 @@ export function validateBackup(v: unknown): Backup {
   for (const list of [v.products, v.categories, v.sales])
     if (new Set(list.map((x: { id: string }) => x.id)).size !== list.length)
       throw new Error("ID duplikat dalam cadangan.");
-  const { qris, ...settings } = s;
+  const { qris, ...settings } = withoutPin(s);
   return {
     ...v,
     settings: {

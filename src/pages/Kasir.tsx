@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useData } from "../hooks/useData";
 import { ShoppingCart, ArrowDownAZ, Search } from "lucide-react";
-import { db, defaults, saveSale } from "../lib/db";
+import { saveSale } from "../lib/db";
 import {
   rupiah,
   totals,
@@ -20,9 +20,7 @@ import { useMediaQuery } from "../hooks/useMediaQuery";
 import { checkoutDetails } from "../lib/payments";
 
 export function Kasir() {
-  const products = useLiveQuery(() => db.products.toArray()) ?? [];
-  const categories = useLiveQuery(() => db.categories.toArray()) ?? [];
-  const settings = useLiveQuery(() => db.settings.get("store")) ?? defaults;
+  const { products, categories, settings, sales } = useData();
   const [params] = useSearchParams();
   const location = useLocation();
   const [query, setQuery] = useState<string | null>(null);
@@ -30,7 +28,6 @@ export function Kasir() {
   const [sort, setSort] = useState<ProductSort>("default");
   const [cartOpen, setCartOpen] = useState(false);
   const smallScreen = useMediaQuery("(max-width: 1279px)");
-  const sales = useLiveQuery(() => db.sales.toArray()) ?? [];
   const category = selectedCategory ?? defaultCategory(products, sales);
   const incomingQuery = params.get("q");
   useEffect(() => {

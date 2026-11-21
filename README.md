@@ -4,20 +4,25 @@ Kasir lokal gratis dan terbuka untuk warung, kafe, dan UMKM Indonesia. Tanpa bac
 
 ## Fitur
 - Ringkasan harian, produk terlaris, dan grafik pendapatan 7/30 hari.
+- Export ringkasan harian, mingguan (Senin–Minggu), atau bulanan ke CSV untuk Excel Indonesia dan laporan A4 melalui cetak/Simpan PDF.
 - Kasir dengan keranjang, diskon Rupiah, pajak, Tunai/QRIS/Transfer, kembalian, serta cetak struk 80mm (dapat diskalakan ke 58mm di dialog cetak).
 - Kelola produk, kategori, stok opsional, riwayat, dan pembatalan dengan pengembalian stok.
 - Foto dan deskripsi produk; foto diperkecil di perangkat menjadi maksimal 600px dan disertakan dalam cadangan JSON. Data lama tanpa foto tetap didukung.
 - Tampilan terang/gelap, navigasi atas, pencarian dan urutan menu, serta keranjang drawer di tablet/ponsel.
 - Profil usaha, cadangan JSON tervalidasi, dan data contoh 30 hari.
-- PWA responsif, font lokal DM Sans, IndexedDB (Dexie skema versi 2, kompatibel dengan data lama), bekerja offline setelah kunjungan awal.
+- Nama pembeli, QRIS usaha (gambar lokal), rekening transfer, dan PPN 11% opsional setelah diskon. Rekening pada struk merupakan salinan saat transaksi.
+- Beranda dengan PIN 6 digit, jeda 30 detik setelah 5 kesalahan, dan kunci otomatis setelah 15 menit tanpa aktivitas.
+- PWA responsif, font lokal DM Sans, IndexedDB (Dexie skema versi 4, kompatibel dengan data lama), bekerja offline setelah kunjungan awal.
 
 ## Menggunakan PWA
-Buka URL RuangPOS yang disediakan pengelola hosting Anda melalui HTTPS. Tambahkan produk di **Produk**, atau pilih **Isi data contoh** di halaman awal. Atur profil dan pajak di **Pengaturan**, lalu mulai menjual di **Kasir**. QRIS dan Transfer adalah pencatatan manual, bukan integrasi pembayaran.
+Buka URL RuangPOS yang disediakan pengelola hosting Anda melalui HTTPS. Buat PIN 6 digit dan ulangi untuk konfirmasi. Tambahkan produk di **Produk**, atau pilih **Isi data contoh**. Atur profil, QRIS, rekening, dan PPN di **Pengaturan**, lalu mulai menjual di **Kasir**. QRIS dan Transfer adalah pencatatan manual, bukan integrasi pembayaran; selalu pastikan dana sudah diterima.
 
 Di Chrome/Edge pilih **Install aplikasi** di menu browser; di Safari iPhone pilih **Bagikan → Tambahkan ke Layar Utama**. Buka sekali saat online agar aset tersimpan, lalu aplikasi dapat digunakan tanpa internet. Tidak ada URL hosted resmi yang diasumsikan oleh proyek ini.
 
 ## Privasi & cadangan
-**Semua data tetap di browser/perangkat Anda.** Tidak ada sinkronisasi cloud atau akun. Tiap browser dan alamat situs memiliki penyimpanan terpisah. Mode privat, pembersihan data browser, kerusakan perangkat, atau penghapusan aplikasi dapat menghilangkan data. Ekspor cadangan JSON secara rutin melalui Pengaturan dan simpan di lokasi aman. Impor mengganti seluruh data setelah konfirmasi. File cadangan berisi data usaha; jangan bagikan sembarangan. Untuk penggunaan bersama, perangkat harus dikelola sendiri: aplikasi ini tidak menyediakan autentikasi atau otorisasi.
+**Semua data tetap di browser/perangkat Anda.** Tidak ada sinkronisasi cloud atau akun. Tiap browser dan alamat situs memiliki penyimpanan terpisah. Mode privat, pembersihan data browser, kerusakan perangkat, atau penghapusan aplikasi dapat menghilangkan data. Ekspor cadangan JSON secara rutin melalui Pengaturan dan simpan di lokasi aman. Impor mengganti data usaha setelah konfirmasi, tetapi tidak mengganti PIN perangkat. File cadangan berisi gambar QRIS dan rekening; jangan bagikan sembarangan.
+
+PIN disimpan sebagai hash SHA-256 dengan salt acak, tidak pernah sebagai teks biasa dan tidak disertakan dalam cadangan. Muat ulang atau tab baru selalu meminta PIN; tombol **Kunci** mengunci langsung. Ganti PIN di Pengaturan menggunakan PIN saat ini. **Lupa PIN hanya dapat direset dengan menghapus seluruh data**, setelah mengetik `HAPUS`. PIN ini adalah kunci antarmuka lokal, bukan enkripsi IndexedDB atau perlindungan terhadap orang yang menguasai perangkat/devtools. Kelola keamanan perangkat sendiri.
 
 ## Self-host
 Node.js 22 diperlukan.
