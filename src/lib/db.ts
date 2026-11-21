@@ -3,18 +3,22 @@ import { photoDataURL, photoBlob } from "./photos";
 import {
   totals,
   stockAfterVoid,
+  migrateSettings,
+  withoutPin,
   type Product,
   type Category,
   type Sale,
   type Settings,
   type Backup,
 } from "./logic";
+import { createPin, verifyPin, cooldownSeconds, nextPinAttempt, emptyAttempts } from "./pin";
 export const defaults: Settings = {
   name: "Ruang Kopi",
   address: "Jl. Melati No. 12, Bandung",
   phone: "",
   footer: "Terima kasih, sampai jumpa kembali!",
-  tax: 0,
+  taxEnabled: false,
+  bankAccounts: [],
 };
 const db = new Dexie("ruangpos") as Dexie & {
   products: EntityTable<Product, "id">;
@@ -34,7 +38,55 @@ db.version(2).stores({
   sales: "id, date",
   settings: "id",
 });
+db.version(3)
+  .stores({
+    products: "id, category, active",
+    categories: "id",
+    sales: "id, date",
+    settings: "id",
+  })
+  .upgrade(tx => tx.table("settings").toCollection().modify(settings => {
+    const migrated = migrateSettings(settings);
+    delete settings.tax;
+    delete settings.taxPercent;
+    Object.assign(settings, migrated);
+  }));
 export { db };
+db.version(4).stores({
+  products: "id, category, active",
+  categories: "id",
+  sales: "id, date",
+  settings: "id",
+});
+export async function setupPin(pin: string) {
+  const credential = await createPin(pin);
+  await db.transaction("rw", db.settings, async () => {
+    const settings = (await db.settings.get("store")) ?? defaults;
+    if (settings.pin) throw new Error("PIN sudah dibuat. Silakan masuk.");
+    await db.settings.put({ ...settings, id: "store", pin: credential, pinLock: { ...emptyAttempts } });
+  });
+}
+export async function attemptUnlock(pin: string) {
+  const result = await db.transaction("rw", db.settings, async () => {
+    const settings = await db.settings.get("store");
+    if (!settings?.pin) return "PIN belum dibuat.";
+    const state = settings.pinLock ?? emptyAttempts;
+    if (cooldownSeconds(state)) return `Terlalu banyak percobaan. Tunggu ${cooldownSeconds(state)} detik.`;
+    const correct = await Dexie.waitFor(verifyPin(pin, settings.pin));
+    const attempts = nextPinAttempt(state, correct);
+    await db.settings.update("store", { pinLock: attempts });
+    return correct ? "" : cooldownSeconds(attempts) ? "Lima kali PIN salah. Tunggu 30 detik." : "PIN salah. Silakan coba lagi.";
+  });
+  if (result) throw new Error(result);
+}
+export async function changePin(current: string, next: string) {
+  const credential = await createPin(next);
+  await attemptUnlock(current);
+  await db.settings.update("store", { pin: credential, pinLock: { ...emptyAttempts } });
+}
+export async function resetAllData() {
+  await db.transaction("rw", db.tables, () => Promise.all(db.tables.map(t => t.clear())));
+}
 export async function getBackup(): Promise<Backup> {
   const snapshot = await db.transaction("r", db.tables, async () => ({
     version: 1,
@@ -46,6 +98,12 @@ export async function getBackup(): Promise<Backup> {
   return {
     ...snapshot,
     version: 1,
+    settings: {
+      ...withoutPin(snapshot.settings),
+      qris: snapshot.settings.qris
+        ? await photoDataURL(snapshot.settings.qris)
+        : undefined,
+    },
     products: await Promise.all(
       snapshot.products.map(async ({ photo, ...p }) => ({
         ...p,
@@ -56,6 +114,7 @@ export async function getBackup(): Promise<Backup> {
 }
 export async function replaceData(b: Backup) {
   await db.transaction("rw", db.tables, async () => {
+    const current = await db.settings.get("store");
     await Promise.all(db.tables.map((t) => t.clear()));
     await db.products.bulkPut(
       b.products.map(({ photo, ...p }) => ({
@@ -65,7 +124,14 @@ export async function replaceData(b: Backup) {
     );
     await db.categories.bulkPut(b.categories);
     await db.sales.bulkPut(b.sales);
-    await db.settings.put({ ...b.settings, id: "store" });
+    const { qris, ...settings } = withoutPin(b.settings);
+    await db.settings.put({
+      ...migrateSettings(settings),
+      ...(qris ? { qris: photoBlob(qris) } : {}),
+      id: "store",
+      pin: current?.pin,
+      pinLock: current?.pinLock,
+    });
   });
 }
 export async function saveSale(sale: Sale) {
@@ -146,6 +212,8 @@ export async function seed() {
         method: ["Tunai", "QRIS", "Transfer"][n % 3],
         cash: sum.total,
         voided: false,
+        customerName: `Pembeli contoh ${n + 1}`,
+        taxEnabled: false,
       });
     }
   await replaceData({
@@ -153,6 +221,6 @@ export async function seed() {
     products,
     categories,
     sales,
-    settings: defaults,
+    settings: { ...defaults, qris: undefined },
   });
 }

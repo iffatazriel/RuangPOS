@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Moon, Sun, Search, ShoppingBag, X } from "lucide-react";
+import { LockKeyhole, Search, ShoppingBag, X } from "lucide-react";
 import { Navigation } from "./Navigation";
-import { applyTheme, initialTheme } from "../lib/theme";
-export function Topbar({ name }: { name?: string }) {
-  const [theme, setTheme] = useState(initialTheme);
+import { ThemeToggle } from "./ThemeToggle";
+export function Topbar({ name, lock }: { name?: string; lock: () => void }) {
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const navigate = useNavigate();
@@ -27,24 +26,8 @@ export function Topbar({ name }: { name?: string }) {
           >
             <Search size={18} />
           </button>
-          <button
-            className="icon-button theme-toggle"
-            aria-label={
-              theme === "light" ? "Aktifkan tema gelap" : "Aktifkan tema terang"
-            }
-            onClick={() => {
-              const next = theme === "light" ? "dark" : "light";
-              setTheme(next);
-              applyTheme(next);
-              try {
-                localStorage.setItem("ruangpos-theme", next);
-              } catch {
-                /* Storage may be unavailable in private mode. */
-              }
-            }}
-          >
-            {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
-          </button>
+          <ThemeToggle />
+          <button className="icon-button" aria-label="Kunci" title="Kunci" onClick={lock}><LockKeyhole size={18} /></button>
           <div className="store-profile">
             <span className="avatar">
               {(name ?? "Usaha Anda")

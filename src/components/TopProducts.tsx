@@ -1,14 +1,13 @@
 import { ArrowUpRight } from "lucide-react";
 import type { stats } from "../lib/logic";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "../lib/db";
+import { useData } from "../hooks/useData";
 import { ProductImage } from "./ProductImage";
 export function TopProducts({
   products,
 }: {
   products: ReturnType<typeof stats>["top"];
 }) {
-  const catalog = useLiveQuery(() => db.products.toArray()) ?? [];
+  const { products: catalog } = useData();
   return (
     <section className="panel top-products">
       <div className="section-heading">

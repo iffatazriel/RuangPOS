@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useData } from "../hooks/useData";
 import { ShoppingCart, ArrowDownAZ, Search } from "lucide-react";
-import { db, defaults, saveSale } from "../lib/db";
+import { saveSale } from "../lib/db";
 import {
   rupiah,
   totals,
+  PPN_RATE,
   type Product,
   type Sale,
   type Line,
@@ -16,11 +17,10 @@ import { ProductCard } from "../components/ProductCard";
 import { CartPanel } from "../components/CartPanel";
 import { browseProducts, defaultCategory, type ProductSort } from "../lib/catalog";
 import { useMediaQuery } from "../hooks/useMediaQuery";
+import { checkoutDetails } from "../lib/payments";
 
 export function Kasir() {
-  const products = useLiveQuery(() => db.products.toArray()) ?? [];
-  const categories = useLiveQuery(() => db.categories.toArray()) ?? [];
-  const settings = useLiveQuery(() => db.settings.get("store")) ?? defaults;
+  const { products, categories, settings, sales } = useData();
   const [params] = useSearchParams();
   const location = useLocation();
   const [query, setQuery] = useState<string | null>(null);
@@ -28,7 +28,6 @@ export function Kasir() {
   const [sort, setSort] = useState<ProductSort>("default");
   const [cartOpen, setCartOpen] = useState(false);
   const smallScreen = useMediaQuery("(max-width: 1279px)");
-  const sales = useLiveQuery(() => db.sales.toArray()) ?? [];
   const category = selectedCategory ?? defaultCategory(products, sales);
   const incomingQuery = params.get("q");
   useEffect(() => {
@@ -41,10 +40,14 @@ export function Kasir() {
   const [discount, setDiscount] = useState(0);
   const [method, setMethod] = useState("Tunai");
   const [cash, setCash] = useState(0);
+  const [customerName, setCustomerName] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState("");
+  const accountId = settings.bankAccounts.some(a => a.id === selectedAccount)
+    ? selectedAccount : settings.bankAccounts[0]?.id ?? "";
   const [receipt, setReceipt] = useState<Sale | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const sum = totals(cart, discount, settings.tax);
+  const sum = totals(cart, discount, settings.taxEnabled ? PPN_RATE : 0);
   const visible = browseProducts(
     products,
     sales,
@@ -76,6 +79,9 @@ export function Kasir() {
   async function pay() {
     setError("");
     if (!cart.length) return;
+    let details;
+    try { details = checkoutDetails(customerName, method, settings, accountId); }
+    catch (error) { setError((error as Error).message); return; }
     if (method === "Tunai" && (!Number.isSafeInteger(cash) || cash < 0)) {
       setError("Uang diterima harus berupa Rupiah bulat.");
       return;
@@ -87,6 +93,8 @@ export function Kasir() {
     setBusy(true);
     try {
       const s: Sale = {
+        ...details,
+        taxEnabled: settings.taxEnabled,
         id: crypto.randomUUID(),
         date: new Date().toISOString(),
         items: cart,
@@ -100,6 +108,7 @@ export function Kasir() {
       setReceipt(s);
       setCart([]);
       setCash(0);
+      setCustomerName("");
       setDiscount(0);
     } catch (e) {
       setError((e as Error).message);
@@ -235,6 +244,10 @@ export function Kasir() {
               setMethod,
               cash,
               setCash,
+              customerName,
+              setCustomerName,
+              accountId,
+              setSelectedAccount,
               error,
               busy,
               pay,

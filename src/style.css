@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scrollbar-gutter: stable;
+}
+
 :root,
 html[data-theme="light"] {
   font-family: "DM Sans", sans-serif;
@@ -819,6 +823,42 @@ html[data-theme="dark"] .product-card:nth-child(4n + 4) .product-image {
   background: var(--surface);
   border-radius: 0 0 0 15px;
   padding: 0 0 7px 7px;
+}
+html[data-theme] .qris-image {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.qris-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 440px;
+  object-fit: contain;
+}
+.checkout-payment,
+.bank-account {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.bank-account {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.bank-account > button { grid-column: 1 / -1; }
+.payment-settings .form-grid { gap: 12px; }
+html[data-theme] .payment-settings .qris-image { max-width: 180px; }
+.checkout-payment a {
+  color: var(--accent);
+  text-decoration: underline;
 }
 .cart-notch::before {
   content: "";
@@ -1853,6 +1893,9 @@ label textarea {
   :root,
   html[data-theme] {
     color-scheme: light;
+    --page: #fff;
+    --surface-muted: #f4f4f4;
+    background: white;
     --text: #000;
     --muted: #555;
     --surface: #fff;
@@ -1920,4 +1963,76 @@ label textarea {
     size: 80mm auto;
     margin: 0;
   }
+}
+.loading-screen {
+  max-width: 1100px;
+  min-height: 80vh;
+  margin: 60px auto;
+  padding: 32px;
+  display: grid;
+  align-content: start;
+  gap: 25px;
+  color: var(--muted);
+}
+.skeleton {
+  height: 140px;
+  border-radius: 18px;
+  background: var(--surface-muted);
+}
+.skeleton:first-child { height: 80px; }
+.welcome { max-width: 1320px; margin: auto; padding: 32px 48px; }
+.welcome-nav { display: flex; justify-content: space-between; align-items: center; }
+.welcome-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; min-height: calc(100vh - 130px); padding: 40px 0; }
+.welcome-copy h1 { font-size: clamp(32px, 4vw, 54px); letter-spacing: -1.8px; margin: 18px 0 25px; }
+.welcome-copy > p:not(.eyebrow) { color: var(--muted); font-size: 18px; line-height: 1.8; }
+.welcome-copy time { display: grid; gap: 8px; margin: 30px 0; color: var(--muted); font-size: 14px; }
+.welcome-copy time strong { color: var(--text); font-size: 34px; letter-spacing: -1px; }
+.welcome-copy > small { color: var(--muted); }
+.pin-card { max-width: 410px; width: 100%; padding: 28px; text-align: center; justify-self: end; }
+.pin-badge { display: inline-flex; padding: 14px; color: var(--accent); background: var(--accent-soft); border-radius: 16px; margin-bottom: 15px; }
+.pin-card > p { font-size: 12px; color: var(--muted); margin: 8px 0 20px; }
+.pin-form { display: grid; gap: 14px; }
+.pin-entry input { width: 100%; text-align: center; letter-spacing: 14px; font-size: 24px; padding: 12px 0 12px 14px; }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.pin-pad button { padding: 14px; font-size: 19px; background: var(--surface-muted); }
+.pin-pad button:nth-child(10) { font-size: 11px; }
+.forgot-pin { border: 0; color: var(--accent); margin-top: 13px; background: transparent; }
+.pin-shake { animation: pin-shake .3s ease-in-out; }
+@keyframes pin-shake { 25%, 75% { transform: translateX(-7px); } 50% { transform: translateX(7px); } }
+.report-preview { position: fixed; inset: 0; z-index: 100; overflow: auto; background: var(--page); padding: 24px; }
+.report-actions { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
+.report-paper { max-width: 100%; width: 210mm; margin: auto; padding: 18mm; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px; overflow-wrap: anywhere; }
+.report-paper > header { border-bottom: 2px solid var(--accent); padding-bottom: 20px; margin-bottom: 20px; }
+.report-paper h1 { margin: 8px 0; }
+.report-paper h2 { margin: 20px 0 8px; font-size: 16px; }
+.report-paper p, .report-paper small { font-size: 12px; color: var(--muted); }
+.report-paper table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; }
+.report-paper th, .report-paper td { padding: 8px; font-size: 11px; white-space: normal; text-align: left; border-bottom: 1px solid var(--border); }
+.report-paper tr { break-inside: avoid; }
+.report-paper thead { display: table-header-group; }
+@media (max-width: 760px) {
+  .welcome { padding: 24px 20px; }
+  .bank-account { grid-template-columns: 1fr; }
+  .welcome-grid { grid-template-columns: 1fr; gap: 30px; padding-top: 35px; }
+  .welcome-copy h1 { font-size: 32px; }
+  .welcome-copy > p:not(.eyebrow), .welcome-copy > small { display: none; }
+  .welcome-copy time { margin: 15px 0 0; }
+  .welcome-copy time strong { font-size: 24px; }
+  .pin-card { justify-self: center; }
+  .report-preview { padding: 10px; }
+  .report-paper { padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pin-shake { animation: none; }
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
+@media print {
+  body:has(.report-preview) > :not(.report-preview) { display: none !important; }
+  .report-preview { position: static; overflow: visible; padding: 0; background: white; color: black; page: summary; }
+  .report-actions { display: none !important; }
+  .report-paper { width: 100%; padding: 0; border: 0; border-radius: 0; background: white; color: black; }
+  .report-paper p, .report-paper small { color: #444; }
+  .report-paper th, .report-paper td { background: white; color: black; border-color: #ccc; padding: 6px; }
+  .report-paper h2 { break-after: avoid; }
+  @page summary { size: A4; margin: 14mm; }
 }

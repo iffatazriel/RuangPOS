@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useData } from "../hooks/useData";
 import { Plus, Trash2 } from "lucide-react";
 import { db } from "../lib/db";
 import { rupiah, type Product } from "../lib/logic";
@@ -10,8 +10,7 @@ import { ProductImage } from "../components/ProductImage";
 import { resizePhoto } from "../lib/photos";
 
 export function Produk() {
-  const products = useLiveQuery(() => db.products.toArray()) ?? [];
-  const categories = useLiveQuery(() => db.categories.toArray()) ?? [];
+  const { products, categories } = useData();
   const [edit, setEdit] = useState<Product | null>(null);
   const [originalStock, setOriginalStock] = useState<Product["stock"]>(null);
   const [cat, setCat] = useState("");

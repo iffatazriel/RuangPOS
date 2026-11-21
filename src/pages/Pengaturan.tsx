@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useData } from "../hooks/useData";
 import { ShoppingBag, X, Download, Upload, Sprout, Trash2 } from "lucide-react";
-import { db, defaults, seed, getBackup, replaceData } from "../lib/db";
-import { day, validateBackup, type Settings } from "../lib/logic";
+import { db, defaults, seed, getBackup, replaceData, resetAllData } from "../lib/db";
+import { day, PPN_RATE, validateBackup, type Settings } from "../lib/logic";
 import { Title } from "../components/Title";
+import { PaymentSettings } from "../components/PaymentSettings";
+import { PinSettings } from "../components/PinSettings";
 
 export function Pengaturan() {
-  const settings = useLiveQuery(() => db.settings.get("store"));
+  const { settings } = useData();
   const [form, setForm] = useState<Settings | null>(null);
   const [message, setMessage] = useState("");
   const s = form ?? settings ?? defaults;
-  const change = (key: keyof Settings, value: string | number) =>
+  const change = (key: keyof Settings, value: string | boolean) =>
     setForm({ ...s, [key]: value });
   async function exportData() {
     const b = await getBackup();
@@ -28,7 +30,7 @@ export function Pengaturan() {
       const b = validateBackup(JSON.parse(await file.text()));
       if (confirm("Ganti SEMUA data di perangkat ini dengan cadangan?")) {
         await replaceData(b);
-        setForm(b.settings);
+        setForm(null);
         setMessage("Cadangan berhasil dipulihkan.");
       }
     } catch (e) {
@@ -53,7 +55,12 @@ export function Pengaturan() {
             className="form-grid"
             onSubmit={async (e) => {
               e.preventDefault();
-              await db.settings.put({ ...s, id: "store" });
+              await db.transaction("rw", db.settings, async () => {
+                const current = (await db.settings.get("store")) ?? defaults;
+                const { name, address, phone, footer, taxEnabled } = s;
+                await db.settings.put({ ...current, name, address, phone, footer, taxEnabled, id: "store" });
+              });
+              setForm(null);
               setMessage("Pengaturan berhasil disimpan.");
             }}
           >
@@ -74,22 +81,20 @@ export function Pengaturan() {
                 />
               </label>
             ))}
-            <label>
-              Pajak (%)
+            <label className="checkbox">
               <input
-                type="number"
-                required
-                min="0"
-                max="100"
-                step="0.1"
-                value={s.tax}
-                onChange={(e) => change("tax", Number(e.target.value))}
+                type="checkbox"
+                checked={s.taxEnabled}
+                onChange={(e) => change("taxEnabled", e.target.checked)}
               />
+              Aktifkan PPN {PPN_RATE}%
             </label>
             <button className="primary">Simpan pengaturan</button>
           </form>
         </section>
         <div className="settings-side">
+          <PaymentSettings settings={settings ?? defaults} />
+          <PinSettings />
           <section className="panel">
             <div className="section-heading">
               <div>
@@ -153,13 +158,7 @@ export function Pengaturan() {
                   ) &&
                   confirm("Anda yakin? Semua data akan hilang permanen.")
                 ) {
-                  await replaceData({
-                    version: 1,
-                    products: [],
-                    categories: [],
-                    sales: [],
-                    settings: defaults,
-                  });
+                  await resetAllData();
                   setForm(null);
                   setMessage("Semua data telah dihapus.");
                 }

@@ -1,3 +1,5 @@
+import type { PinCredential, PinAttempts } from "./pin";
+
 export interface Category {
   id: string;
   name: string;
@@ -35,20 +37,53 @@ export interface Sale {
   method: string;
   cash: number;
   voided: boolean;
+  customerName?: string;
+  bankAccount?: BankAccount;
+  taxEnabled?: boolean;
 }
+export interface BankAccount {
+  id: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+}
+export const PPN_RATE = 11;
 export interface Settings {
   name: string;
   address: string;
   phone: string;
   footer: string;
-  tax: number;
+  taxEnabled: boolean;
+  qris?: Blob;
+  bankAccounts: BankAccount[];
+  pin?: PinCredential;
+  pinLock?: PinAttempts;
+}
+export type LegacySettings = Omit<Settings, "taxEnabled" | "bankAccounts"> & {
+  taxEnabled?: boolean;
+  bankAccounts?: BankAccount[];
+  tax?: number;
+  taxPercent?: number;
+};
+export function migrateSettings(settings: LegacySettings): Settings {
+  const { tax, taxPercent, ...rest } = settings;
+  return {
+    ...rest,
+    taxEnabled: settings.taxEnabled ?? ((taxPercent ?? tax ?? 0) > 0),
+    bankAccounts: settings.bankAccounts ?? [],
+  };
 }
 export interface Backup {
   version: 1;
   products: (Omit<Product, "photo"> & { photo?: string })[];
   categories: Category[];
   sales: Sale[];
-  settings: Settings;
+  settings: Omit<Settings, "qris" | "pin" | "pinLock"> & { qris?: string };
+}
+export function withoutPin<T>(settings: T): Omit<T, "pin" | "pinLock"> {
+  const { pin: _pin, pinLock: _lock, ...rest } = settings as T & { pin?: unknown; pinLock?: unknown };
+  void _pin; void _lock;
+  return rest;
 }
 export const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", {
@@ -100,20 +135,34 @@ const obj = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === "object";
 const money = (v: unknown): v is number =>
   Number.isSafeInteger(v) && (v as number) >= 0;
-export function validPhoto(value: unknown): value is string {
-  if (typeof value !== "string" || value.length > 4_000_000) return false;
-  const match = /^data:image\/(jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
+export function validPhoto(value: unknown, allowPNG = false): value is string {
+  if (
+    typeof value !== "string" ||
+    value.length > (allowPNG ? 8_000_000 : 4_000_000)
+  ) return false;
+  const match = /^data:image\/(jpeg|webp|png);base64,([A-Za-z0-9+/]+={0,2})$/.exec(
     value,
   );
   if (!match || match[2].length % 4 !== 0) return false;
   try {
     const bytes = atob(match[2]);
+    if (match[1] === "png")
+      return allowPNG &&
+        bytes.startsWith("\x89PNG\r\n\x1a\n") &&
+        bytes.endsWith("IEND\xaeB\x60\x82");
     return match[1] === "jpeg"
       ? bytes.startsWith("\xff\xd8\xff") && bytes.endsWith("\xff\xd9")
       : bytes.startsWith("RIFF") && bytes.slice(8, 12) === "WEBP";
   } catch {
     return false;
   }
+}
+export function validBankAccount(value: unknown): value is BankAccount {
+  if (!obj(value)) return false;
+  return ["id", "bankName", "accountNumber", "accountHolder"].every(
+    key => typeof value[key] === "string" &&
+      value[key].trim().length > 0 && value[key].length <= 100,
+  );
 }
 export function validateBackup(v: unknown): Backup {
   if (
@@ -130,10 +179,17 @@ export function validateBackup(v: unknown): Backup {
     ![s.name, s.address, s.phone, s.footer].every(
       (x) => typeof x === "string",
     ) ||
-    typeof s.tax !== "number" ||
-    !Number.isFinite(s.tax) ||
-    s.tax < 0 ||
-    s.tax > 100
+    [s.tax, s.taxPercent].some(rate =>
+      rate !== undefined &&
+      (typeof rate !== "number" || !Number.isFinite(rate) || rate < 0 || rate > 100),
+    ) ||
+    (s.taxEnabled !== undefined && typeof s.taxEnabled !== "boolean") ||
+    (s.qris !== undefined && !validPhoto(s.qris, true)) ||
+    (s.bankAccounts !== undefined && (
+      !Array.isArray(s.bankAccounts) ||
+      !s.bankAccounts.every(validBankAccount) ||
+      new Set(s.bankAccounts.map(a => a.id)).size !== s.bankAccounts.length
+    ))
   )
     throw new Error("Pengaturan tidak valid.");
   if (
@@ -166,6 +222,12 @@ export function validateBackup(v: unknown): Backup {
         typeof t.date === "string" &&
         !isNaN(Date.parse(t.date)) &&
         typeof t.voided === "boolean" &&
+        (t.customerName === undefined || (
+          typeof t.customerName === "string" &&
+          t.customerName.trim().length > 0 && t.customerName.length <= 60
+        )) &&
+        (t.bankAccount === undefined || validBankAccount(t.bankAccount)) &&
+        (t.taxEnabled === undefined || typeof t.taxEnabled === "boolean") &&
         ["Tunai", "QRIS", "Transfer"].includes(String(t.method)) &&
         [t.subtotal, t.discount, t.tax, t.total, t.cash].every(money) &&
         Array.isArray(t.items) &&
@@ -187,5 +249,12 @@ export function validateBackup(v: unknown): Backup {
   for (const list of [v.products, v.categories, v.sales])
     if (new Set(list.map((x: { id: string }) => x.id)).size !== list.length)
       throw new Error("ID duplikat dalam cadangan.");
-  return v as unknown as Backup;
+  const { qris, ...settings } = withoutPin(s);
+  return {
+    ...v,
+    settings: {
+      ...migrateSettings(settings as LegacySettings),
+      ...(qris ? { qris } : {}),
+    },
+  } as unknown as Backup;
 }
