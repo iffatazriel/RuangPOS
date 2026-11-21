@@ -1,4 +1,6 @@
 import type { PinCredential, PinAttempts } from "./pin";
+import { validOptionGroups, validSelections, type OptionGroup, type SelectedOption } from "./options";
+import { validShift, type Shift } from "./shifts";
 
 export interface Category {
   id: string;
@@ -14,6 +16,7 @@ export interface Product {
   active: boolean;
   description?: string;
   photo?: Blob;
+  optionGroups?: OptionGroup[];
 }
 export interface Line {
   productId: string;
@@ -22,6 +25,7 @@ export interface Line {
   price: number;
   qty: number;
   stockDeducted?: boolean;
+  selectedOptions?: SelectedOption[];
 }
 export function stockAfterVoid(stock: number | null, item: Line) {
   return stock !== null && item.stockDeducted ? stock + item.qty : stock;
@@ -40,6 +44,7 @@ export interface Sale {
   customerName?: string;
   bankAccount?: BankAccount;
   taxEnabled?: boolean;
+  shiftId?: string;
 }
 export interface BankAccount {
   id: string;
@@ -78,6 +83,7 @@ export interface Backup {
   products: (Omit<Product, "photo"> & { photo?: string })[];
   categories: Category[];
   sales: Sale[];
+  shifts?: Shift[];
   settings: Omit<Settings, "qris" | "pin" | "pinLock"> & { qris?: string };
 }
 export function withoutPin<T>(settings: T): Omit<T, "pin" | "pinLock"> {
@@ -209,6 +215,7 @@ export function validateBackup(v: unknown): Backup {
         typeof p.active === "boolean" &&
         (p.description === undefined || typeof p.description === "string") &&
         (p.photo === undefined || validPhoto(p.photo)) &&
+        (p.optionGroups === undefined || validOptionGroups(p.optionGroups)) &&
         money(p.price) &&
         (p.stock === null || money(p.stock)),
     )
@@ -228,6 +235,7 @@ export function validateBackup(v: unknown): Backup {
         )) &&
         (t.bankAccount === undefined || validBankAccount(t.bankAccount)) &&
         (t.taxEnabled === undefined || typeof t.taxEnabled === "boolean") &&
+        (t.shiftId === undefined || (typeof t.shiftId === "string" && t.shiftId.length > 0)) &&
         ["Tunai", "QRIS", "Transfer"].includes(String(t.method)) &&
         [t.subtotal, t.discount, t.tax, t.total, t.cash].every(money) &&
         Array.isArray(t.items) &&
@@ -239,6 +247,7 @@ export function validateBackup(v: unknown): Backup {
             typeof i.emoji === "string" &&
             money(i.price) &&
             money(i.qty) &&
+            (i.selectedOptions === undefined || validSelections(i.selectedOptions)) &&
             (i.stockDeducted === undefined ||
               typeof i.stockDeducted === "boolean") &&
             i.qty > 0,
@@ -246,7 +255,17 @@ export function validateBackup(v: unknown): Backup {
     )
   )
     throw new Error("Transaksi tidak valid.");
-  for (const list of [v.products, v.categories, v.sales])
+  const shifts = v.shifts === undefined ? [] : v.shifts;
+  const sales = v.sales;
+  if (!Array.isArray(shifts) || !shifts.every(validShift) || shifts.filter(s => s.status === "open").length > 1)
+    throw new Error("Shift tidak valid.");
+  for (const sale of v.sales)
+    if (sale.shiftId !== undefined && !shifts.some(s => s.id === sale.shiftId))
+      throw new Error("Shift transaksi tidak ditemukan.");
+  for (const shift of shifts)
+    if (shift.summary?.saleIds.some(id => !sales.some(s => s.id === id && s.shiftId === shift.id)))
+      throw new Error("Transaksi ringkasan shift tidak ditemukan.");
+  for (const list of [v.products, v.categories, v.sales, shifts])
     if (new Set(list.map((x: { id: string }) => x.id)).size !== list.length)
       throw new Error("ID duplikat dalam cadangan.");
   const { qris, ...settings } = withoutPin(s);

@@ -12,6 +12,8 @@ import {
   type Backup,
 } from "./logic";
 import { createPin, verifyPin, cooldownSeconds, nextPinAttempt, emptyAttempts } from "./pin";
+import { summarizeShift, wholeRupiah, type Shift } from "./shifts";
+import { optionLine } from "./options";
 export const defaults: Settings = {
   name: "Ruang Kopi",
   address: "Jl. Melati No. 12, Bandung",
@@ -25,6 +27,7 @@ const db = new Dexie("ruangpos") as Dexie & {
   categories: EntityTable<Category, "id">;
   sales: EntityTable<Sale, "id">;
   settings: EntityTable<Settings & { id: string }, "id">;
+  shifts: EntityTable<Shift, "id">;
 };
 db.version(1).stores({
   products: "id, category, active",
@@ -58,6 +61,35 @@ db.version(4).stores({
   sales: "id, date",
   settings: "id",
 });
+db.version(5).stores({
+  products: "id, category, active",
+  categories: "id",
+  sales: "id, date, shiftId",
+  settings: "id",
+  shifts: "id, status, openedAt",
+}).upgrade(tx => tx.table("products").toCollection().modify(product => {
+  product.optionGroups ??= [];
+}));
+export async function openShift(openingCash: number, cashierName: string) {
+  wholeRupiah(openingCash);
+  if (cashierName.trim().length > 60) throw new Error("Nama kasir maksimal 60 karakter.");
+  return db.transaction("rw", db.shifts, async () => {
+    if (await db.shifts.where("status").equals("open").count()) throw new Error("Masih ada shift terbuka.");
+    const shift: Shift = { id: crypto.randomUUID(), openedAt: new Date().toISOString(), openingCash, cashierName: cashierName.trim(), status: "open" };
+    await db.shifts.add(shift);
+    return shift;
+  });
+}
+export async function closeShift(id: string, countedCash: number, note: string) {
+  wholeRupiah(countedCash);
+  if (note.trim().length > 500) throw new Error("Catatan maksimal 500 karakter.");
+  await db.transaction("rw", db.shifts, db.sales, async () => {
+    const shift = await db.shifts.get(id);
+    if (!shift || shift.status !== "open") throw new Error("Shift sudah ditutup atau tidak ditemukan.");
+    const sales = await db.sales.where("shiftId").equals(id).toArray();
+    await db.shifts.update(id, { status: "closed", closedAt: new Date().toISOString(), note: note.trim(), summary: summarizeShift(shift, sales, countedCash) });
+  });
+}
 export async function setupPin(pin: string) {
   const credential = await createPin(pin);
   await db.transaction("rw", db.settings, async () => {
@@ -93,6 +125,7 @@ export async function getBackup(): Promise<Backup> {
     products: await db.products.toArray(),
     categories: await db.categories.toArray(),
     sales: await db.sales.toArray(),
+    shifts: await db.shifts.toArray(),
     settings: (await db.settings.get("store")) ?? defaults,
   }));
   return {
@@ -124,6 +157,7 @@ export async function replaceData(b: Backup) {
     );
     await db.categories.bulkPut(b.categories);
     await db.sales.bulkPut(b.sales);
+    await db.shifts.bulkPut(b.shifts ?? []);
     const { qris, ...settings } = withoutPin(b.settings);
     await db.settings.put({
       ...migrateSettings(settings),
@@ -135,7 +169,9 @@ export async function replaceData(b: Backup) {
   });
 }
 export async function saveSale(sale: Sale) {
-  await db.transaction("rw", db.products, db.sales, async () => {
+  await db.transaction("rw", db.products, db.sales, db.shifts, async () => {
+    const shift = sale.shiftId ? await db.shifts.get(sale.shiftId) : undefined;
+    if (!shift || shift.status !== "open") throw new Error("Buka shift sebelum menyimpan transaksi.");
     const items = [];
     for (const i of sale.items) {
       const p = await db.products.get(i.productId);
@@ -168,7 +204,7 @@ export async function seed() {
     { id: "makanan", name: "Makanan" },
     { id: "camilan", name: "Camilan" },
   ];
-  const products = [
+  const products: Omit<Product, "photo">[] = [
     ["Es Kopi Susu", "kopi", 18000, "🧋"],
     ["Americano", "kopi", 15000, "☕"],
     ["Cappuccino", "kopi", 22000, "☕"],
@@ -186,9 +222,20 @@ export async function seed() {
     stock: 100,
     active: true,
     description: `${p[0]} favorit, disiapkan segar untuk menemani hari Anda.`,
+    optionGroups: i < 5 ? [
+      { name: "Ukuran", required: true, multiple: false, options: [{ name: "Regular", priceDelta: 0 }, { name: "Large", priceDelta: 5000 }] },
+      { name: "Gula", required: true, multiple: false, options: [{ name: "Normal", priceDelta: 0 }, { name: "Sedikit", priceDelta: 0 }, { name: "Tanpa gula", priceDelta: 0 }] },
+      { name: "Topping", required: false, multiple: true, options: [{ name: "Boba", priceDelta: 3000 }, { name: "Jelly", priceDelta: 2000 }] },
+    ] : [],
   }));
   const sales: Sale[] = [];
+  const shifts: Shift[] = [];
   for (let d = 29; d >= 0; d--)
+  {
+    const opened = new Date();
+    opened.setDate(opened.getDate() - d);
+    opened.setHours(7, 0, 0, 0);
+    const shift: Shift = { id: crypto.randomUUID(), openedAt: opened.toISOString(), openingCash: 100000, cashierName: "Kasir contoh", status: "closed" };
     for (let n = 0; n < 6 + Math.floor(Math.random() * 10); n++) {
       const date = new Date();
       date.setDate(date.getDate() - d);
@@ -196,10 +243,7 @@ export async function seed() {
       const p = products[Math.floor(Math.random() * products.length)];
       const items = [
         {
-          productId: p.id,
-          name: p.name,
-          emoji: p.emoji,
-          price: p.price,
+          ...optionLine(p, p.optionGroups?.map(g => g.required ? [0] : [])),
           qty: 1 + Math.floor(Math.random() * 3),
         },
       ];
@@ -214,13 +258,20 @@ export async function seed() {
         voided: false,
         customerName: `Pembeli contoh ${n + 1}`,
         taxEnabled: false,
+        shiftId: shift.id,
       });
     }
+    const closed = new Date(opened);
+    closed.setHours(23, 0, 0, 0);
+    const expected = summarizeShift(shift, sales, 0).expectedCash;
+    shifts.push({ ...shift, closedAt: closed.toISOString(), summary: summarizeShift(shift, sales, expected), note: "Data contoh" });
+  }
   await replaceData({
     version: 1,
     products,
     categories,
     sales,
+    shifts,
     settings: { ...defaults, qris: undefined },
   });
 }
