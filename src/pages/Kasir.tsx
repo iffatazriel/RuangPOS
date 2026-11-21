@@ -61,6 +61,10 @@ export function Kasir() {
   async function pay() {
     setError("");
     if (!cart.length) return;
+    if (method === "Tunai" && (!Number.isSafeInteger(cash) || cash < 0)) {
+      setError("Uang diterima harus berupa Rupiah bulat.");
+      return;
+    }
     if (method === "Tunai" && cash < sum.total) {
       setError("Uang diterima belum cukup.");
       return;
@@ -274,7 +278,9 @@ export function Kasir() {
                     min="0"
                     value={cash || ""}
                     placeholder="0"
-                    onChange={(e) => setCash(Number(e.target.value))}
+                    step="1"
+                    inputMode="numeric"
+                    onChange={(e) => setCash(Math.max(0, Math.trunc(Number(e.target.value))))}
                   />
                 </label>
                 <div className="quick-cash">
