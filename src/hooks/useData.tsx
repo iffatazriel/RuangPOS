@@ -7,6 +7,7 @@ async function loadData() {
     products: await db.products.toArray(),
     categories: await db.categories.toArray(),
     sales: await db.sales.orderBy("date").reverse().toArray(),
+    shifts: await db.shifts.orderBy("openedAt").reverse().toArray(),
     settings: (await db.settings.get("store")) ?? defaults,
   }));
 }

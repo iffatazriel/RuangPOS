@@ -4,6 +4,9 @@ import { voidSale } from "../lib/db";
 import { day, rupiah, type Sale } from "../lib/logic";
 import { Title } from "../components/Title";
 import { Receipt } from "../components/Receipt";
+import { ShiftControls } from "../components/ShiftControls";
+import { ShiftHistory } from "../components/ShiftHistory";
+import { optionText } from "../lib/options";
 
 export function Transaksi() {
   const { sales, settings } = useData();
@@ -22,6 +25,7 @@ export function Transaksi() {
       <Title eyebrow="CATATAN SETIAP LANGKAH USAHA" title="Riwayat transaksi">
         <span className="pill">{filtered.length} transaksi</span>
       </Title>
+      <ShiftControls allowOpen={false} />
       <div className="panel">
         <div className="section-heading">
           <h2>Semua transaksi</h2>
@@ -63,7 +67,7 @@ export function Transaksi() {
                     <small>{new Date(s.date).toLocaleString("id-ID")}</small>
                   </td>
                   <td>
-                    {s.items.map((i) => `${i.qty}× ${i.name}`).join(", ")}
+                    {s.items.map((i) => `${i.qty}× ${i.name}${i.selectedOptions?.length ? ` (${optionText(i)})` : ""}`).join(", ")}
                   </td>
                   <td>{s.customerName ?? "—"}</td>
                   <td>{s.method}</td>
@@ -102,6 +106,7 @@ export function Transaksi() {
           )}
         </div>
       </div>
+      <ShiftHistory />
       {detail && (
         <Receipt
           sale={detail}

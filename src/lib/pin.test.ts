@@ -6,7 +6,14 @@ import {
   cooldownSeconds,
   nextPinAttempt,
   emptyAttempts,
+  shouldSubmitPinOnEnter,
 } from "./pin";
+it("leaves Enter activation native on buttons and links but submits from non-controls", () => {
+  for (const tag of ["BUTTON", "button", "A", "a"])
+    expect(shouldSubmitPinOnEnter(tag)).toBe(false);
+  for (const tag of [undefined, null, "BODY", "DIV", "SPAN"])
+    expect(shouldSubmitPinOnEnter(tag)).toBe(true);
+});
 it("hashes six-digit PINs with random salts and verifies without plaintext storage", async () => {
   const first = await createPin("123456"),
     second = await createPin("123456");

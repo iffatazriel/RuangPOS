@@ -10,6 +10,7 @@ import {
   type SalesReport,
 } from "../lib/reports";
 import { useDialogFocus } from "../hooks/useDialogFocus";
+import { optionText } from "../lib/options";
 
 export function ReportExport({
   date,
@@ -234,6 +235,7 @@ function PrintReport({
             <tr>
               <th>Waktu</th>
               <th>Pembeli</th>
+              <th>Pesanan & varian</th>
               <th>Metode</th>
               <th>Total</th>
             </tr>
@@ -243,6 +245,7 @@ function PrintReport({
               <tr key={s.id}>
                 <td>{new Date(s.date).toLocaleString("id-ID")}</td>
                 <td>{s.customerName ?? "—"}</td>
+                <td>{s.items.map(i => `${i.qty}× ${i.name}${i.selectedOptions?.length ? ` (${optionText(i)})` : ""}`).join("; ")}</td>
                 <td>{s.method}</td>
                 <td>{rupiah(s.total)}</td>
               </tr>
