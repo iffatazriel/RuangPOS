@@ -200,9 +200,8 @@ Periksa juga alur yang berubah pada desktop/ponsel dan kedua tema. Gunakan data 
 Jika RuangPOS membantu usaha Anda, bantu pengembangan lewat laporan bug, kontribusi kode/dokumentasi, atau donasi. Aplikasi tetap dapat digunakan tanpa donasi.
 
 <!-- TODO: ganti URL donasi resmi dan selaraskan src/lib/config.ts serta .github/FUNDING.yml. -->
-[![Dukung RuangPOS di Saweria](https://img.shields.io/badge/Dukung_RuangPOS-Saweria-faae2b?style=for-the-badge)](https://saweria.co/USERNAME)
+[![Dukung RuangPOS di Saweria](https://img.shields.io/badge/Dukung_RuangPOS-Saweria-faae2b?style=for-the-badge)](https://saweria.co/toolsman)
 
-**Tautan donasi di atas masih placeholder.** Pengelola perlu menggantinya di README ini, `DONATION_URL` pada `src/lib/config.ts`, dan `.github/FUNDING.yml` sebelum mempromosikan kanal donasi resmi.
 
 ## Lisensi
 
