@@ -1,6 +1,11 @@
 <div align="center">
-  <img src="public/icon-192.png" alt="Logo RuangPOS" width="88" height="88" />
-  <h1>RuangPOS</h1>
+  <h1>
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/brand-dark.png" />
+      <source media="(prefers-color-scheme: light)" srcset="docs/brand-light.png" />
+      <img src="docs/brand-light.png" alt="RuangPOS." width="280" />
+    </picture>
+  </h1>
   <p><strong>Aplikasi kasir gratis, open source, jalan offline — tanpa daftar, tanpa server.</strong></p>
   <p>Ruang sederhana untuk warung, kafe, dan UMKM Indonesia mengelola penjualan sehari-hari.</p>
   <p>
