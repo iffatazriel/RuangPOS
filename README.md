@@ -9,12 +9,13 @@
   <p><strong>Aplikasi kasir gratis, open source, jalan offline — tanpa daftar, tanpa server.</strong></p>
   <p>Ruang sederhana untuk warung, kafe, dan UMKM Indonesia mengelola penjualan sehari-hari.</p>
   <p>
+    <a href="https://ruangpos.vercel.app"><img src="https://img.shields.io/badge/Demo-Coba_sekarang-1d5bd8" alt="Demo RuangPOS" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="Lisensi AGPL-3.0" /></a>
     <a href="https://github.com/iffatazriel/RuangPOS/actions/workflows/ci.yml"><img src="https://github.com/iffatazriel/RuangPOS/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
     <img src="https://img.shields.io/badge/PWA-offline_ready-168563" alt="PWA, siap offline" />
     <img src="https://img.shields.io/badge/made_with-React_%2B_Vite-646cff" alt="Dibuat dengan React dan Vite" />
   </p>
-  <p><a href="#coba-sekarang">Coba sekarang</a> · <a href="#fitur">Lihat fitur</a> · <a href="#self-host">Self-host</a> · <a href="#kontribusi">Ikut berkontribusi</a></p>
+  <p><a href="https://ruangpos.vercel.app">Coba sekarang</a> · <a href="#fitur">Lihat fitur</a> · <a href="#self-host">Self-host</a> · <a href="#kontribusi">Ikut berkontribusi</a></p>
 </div>
 
 ![Kasir RuangPOS dengan varian pesanan dan keranjang terisi](docs/screenshots/kasir.webp)
@@ -87,7 +88,9 @@ Juga tersedia: pengelolaan rekening dan gambar QRIS, riwayat transaksi dengan pe
 
 ## Coba sekarang
 
-> **TODO URL demo:** `https://ruangpos.example` — placeholder, **belum situs demo aktif**. Pengelola dapat menggantinya setelah deployment tersedia.
+[**Buka demo RuangPOS →**](https://ruangpos.vercel.app)
+
+Buat PIN, lalu pilih **Pengaturan → Isi data contoh** untuk mencoba. Seluruh data demo disimpan di **browser masing-masing pengunjung** (IndexedDB), bukan di server. PIN, produk, dan transaksi Anda tidak dibagikan kepada pengunjung lain; ekspor backup jika ingin menyimpannya.
 
 ### Jalankan di perangkat sendiri
 
@@ -139,11 +142,11 @@ Deploy **isi `dist/`** melalui HTTPS. Konfigurasi saat ini mengasumsikan aplikas
 | Host | Konfigurasi dasar |
 | --- | --- |
 | **Cloudflare Pages** | Build `npm run build`, output `dist`, Node 22. Gunakan penanganan SPA/fallback ke `index.html`. |
-| **Vercel** | Preset Vite, output `dist`; tambahkan rewrite route aplikasi ke `/index.html`. |
+| **Vercel** | Preset Vite, build `npm run build`, output `dist`; rewrite SPA dan header cache PWA tersedia di [`vercel.json`](vercel.json). |
 | **Netlify** | Build `npm run build`, publish `dist`; tambahkan aturan SPA `/* /index.html 200` pada `_redirects` di hasil deployment. |
 | **GitHub Pages** | Gunakan situs root (`username.github.io`) atau custom domain. Untuk tautan langsung, sediakan `404.html` salinan `index.html`. Project Pages pada `/RuangPOS/` **belum didukung konfigurasi default**; perlu penyesuaian base Vite, basename router, dan URL manifest/service worker. |
 
-Aturan khusus host di atas adalah petunjuk konfigurasi, bukan berkas deployment yang sudah disertakan. Setelah deploy, periksa reload pada `/kasir`, instalasi PWA, dan akses offline. Tidak ada sinkronisasi data antar-domain atau browser.
+Konfigurasi Vercel sudah disertakan; aturan host lain di atas adalah petunjuk konfigurasi. Setelah deploy, periksa reload pada `/kasir`, instalasi PWA, dan akses offline. Tidak ada sinkronisasi data antar-domain atau browser.
 
 ### Docker
 
